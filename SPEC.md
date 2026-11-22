@@ -1,7 +1,7 @@
-# SSRGenerate 確定仕様書 (`SPEC.md`)
+# SSRGenerate-Lite 確定仕様書 (`SPEC.md`)
 
-> 本ドキュメントは SSRGenerate の現在の実装に基づく**確定仕様**です。  
-> エージェント向けの常駐ルール・コマンド・検証手順は [`AGENTS.md`](./AGENTS.md)、今後の開発計画は [`ROADMAP.md`](./ROADMAP.md) を参照してください。
+> 本ドキュメントは SSRGenerate-Lite の現在の実装に基づく**確定仕様**です。  
+> エージェント向けの常駐ルール・コマンド・検証手順は [`AGENTS.md`](./AGENTS.md)、本家からのデチューン変更一覧は [`UPSTREAM.md`](./UPSTREAM.md) を参照してください。
 
 ---
 
@@ -9,8 +9,8 @@
 
 | 項目 | 仕様 | 定義箇所 |
 | :--- | :--- | :--- |
-| **解像度** | 縦 9:16: `1080 × 1920`（`data-resolution="portrait"`）<br>横 16:9: `1920 × 1080`（`data-resolution="landscape"`） | `index.html`, `compositions/scene-*.html`, `card-config.js` (`orientation`) |
-| **フレームレート / 書き出し** | `30fps` / `hyperframes@0.9.72 render -q delivery --crf 12` | `package.json` |
+| **出力解像度** | 縦 9:16: `720 × 1280`（`data-orientation="portrait"`）<br>横 16:9: `1280 × 720`（`data-orientation="landscape"`）<br>※ 内部レイアウト座標系は本家 `1080×1920` / `1920×1080` を維持し、ステージを `scale(calc(2 / 3))` で縮小出力 | `index.html`, `compositions/scene-*.html`, `card-config.js` (`orientation`) |
+| **フレームレート / 書き出し** | `24fps`（384 フレーム） / `hyperframes@0.9.72 render -q standard --crf 20 --no-low-memory-mode -w 3` | `package.json`, `scripts/render_video.mjs` |
 | **出力ファイル** | `renders/SSR_{preset}_{YYYYMMDD}.mp4`（同日重複時は `_2`, `_3` ... 自動連番） | `scripts/render_video.mjs` |
 | **総尺** | **16.0 秒**（冒頭 `0.5s` 無音黒フェードイン ＋ 本編 `15.0s` ＋ 末尾 `0.5s` 無音黒フェードアウト） | `index.html`, `scripts/qa_video.py` |
 | **カード物理寸法** | 縦: `900px × 1590px`（内窓 `860×1550`）<br>横: `1480px × 860px`（内窓 `1440×820`）<br>共通: 枠幅 `20px` / 外角丸 `40px` / 内窓角丸 `24px` | `scripts/_utils.py`, `compositions/shared-base.css` |

@@ -5,6 +5,7 @@ renders/
 .hyperframes/
 .hf_home/
 .tmp/
+hf_noaudio_*.html
 .venv/
 venv/
 *.log
@@ -22,8 +23,9 @@ assets/fonts/*.ttf
 assets/fonts/*.otf
 !assets/fonts/LICENSE-*.txt
 
-# Private input photos & test directories
+# Private input photos & test directories (sample assets/photo.jpg is tracked)
 assets/*.jpg
+!assets/photo.jpg
 assets/*.jpeg
 assets/*.png
 assets/*.webp

@@ -16,7 +16,7 @@ bash agent/setup_env.sh
 ```
 
 > **Muse VM 注意事項 (§7)**:
-> - Python は必ず `.venv/bin` を `PATH` の先頭に置いて実行します（`ssr_agent.py` 内部では自動的に `.venv`・`.hf_home` (`chmod 700`)・`.tmp` (`TMPDIR`) が適用されます）。
+> - Python は必ず `.venv/bin/python` 経由で実行します（`ssr_agent.py` 内部で `.venv` の `PATH` 優先、`SSR_PYTHON`、プライベート `HOME` (`chmod 700`)、`.tmp` (`TMPDIR`) が自動設定されます。グループ書込可能なワークスペースでは自動で `/tmp/ssr_hf_home_<uid>` へ退避し、環境変数 `SSR_HF_HOME` で任意パスへの上書きも可能です）。
 
 環境・対応プリセットの確認:
 

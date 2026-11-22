@@ -32,6 +32,8 @@ Muse エージェントの仮想環境（4 vCPU / RAM 7.7 GiB / GPU なし Softw
    - `scripts/render_video.mjs` および `agent/ssr_agent.py` にて、POSIX 環境で `.hf_home`（毎回 `chmod 700` を再適用）と `.tmp`（プロジェクトディスク側の一時領域）を自動設定。
 6. **リポジトリ軽量化（生成物・フォントの初回取得方式）**
    - `assets/generated/*`, `assets/se_*.wav`, `assets/fonts/*.ttf` を `.gitignore` 管理とし、`ssr-agent setup`（または `agent/setup_env.sh` / `.ps1`）で本家固定コミット `0df40bea4138a4390ea4027f1f730dd1d86f69fc` から SHA256 検証付きでフォントを取得＆全アセットを初期生成する構成。
+7. **音声事前ミックス＋FFmpeg 高速 mux（`assets/se_mix_16s.wav`）**
+   - `scripts/generate_se.py` で 16.0s 統合マスター WAV（`assets/se_mix_16s.wav`）を事前生成し、`scripts/render_video.mjs` の既定動作として一時無音 HTML で映像のみレンダリングした後に `ffmpeg -c:v copy -c:a aac` で高速 mux する（`--no-fast-audio` または `SSR_FAST_AUDIO=0` で従来方式へ切替可能）。これにより HyperFrames の音声処理フェーズ（Muse VM で約 40 秒）を 0 秒化。
 
 ---
 

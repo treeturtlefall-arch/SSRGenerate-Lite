@@ -99,7 +99,8 @@ function parseCliArgs(argv) {
   let dryRun = false;
   let forceTypo = false;
   let noAutoTypo = false;
-  let hasExplicitOutput = false;
+  let noFastAudio = false;
+  let explicitOutput = null;
   const passthroughArgs = [];
 
   for (let i = 0; i < argv.length; i += 1) {
@@ -116,8 +117,22 @@ function parseCliArgs(argv) {
       noAutoTypo = true;
       continue;
     }
-    if (a === "-o" || a === "--output" || a.startsWith("--output=")) {
-      hasExplicitOutput = true;
+    if (a === "--no-fast-audio") {
+      noFastAudio = true;
+      continue;
+    }
+    if (a === "-o" || a === "--output") {
+      if (i + 1 >= argv.length) {
+        console.error(`[error] ${a} requires an argument.`);
+        process.exit(1);
+      }
+      explicitOutput = argv[i + 1];
+      i += 1;
+      continue;
+    }
+    if (a.startsWith("--output=")) {
+      explicitOutput = a.slice("--output=".length);
+      continue;
     }
     if (a === "--variables" || a.startsWith("--variables=") || a === "--variables-file" || a.startsWith("--variables-file=")) {
       const isFileFlag = a === "--variables-file" || a.startsWith("--variables-file=");
@@ -140,7 +155,7 @@ function parseCliArgs(argv) {
     passthroughArgs.push(a);
   }
 
-  return { cliVars, dryRun, forceTypo, noAutoTypo, hasExplicitOutput, passthroughArgs };
+  return { cliVars, dryRun, forceTypo, noAutoTypo, noFastAudio, explicitOutput, passthroughArgs };
 }
 
 function applyCliOverrides(baseCfg, overrides) {
@@ -381,7 +396,8 @@ function resolveOutputPath(preset) {
   return path.relative(PROJECT_ROOT, candidate).replace(/\\/g, "/");
 }
 
-const { cliVars, dryRun, forceTypo, noAutoTypo, hasExplicitOutput, passthroughArgs } = parseCliArgs(process.argv.slice(2));
+const { cliVars, dryRun, forceTypo, noAutoTypo, noFastAudio, explicitOutput, passthroughArgs } = parseCliArgs(process.argv.slice(2));
+const hasExplicitOutput = Boolean(explicitOutput);
 const baseCfg = loadCardConfig();
 const effectiveCfg = applyCliOverrides(baseCfg, cliVars);
 const expectedSource = buildExpectedSource(effectiveCfg);
@@ -403,6 +419,9 @@ function encodeVariablesForHyperFrames(vars) {
 
 const preset = expectedSource.preset;
 const autoOutput = resolveOutputPath(preset);
+const finalOutput = explicitOutput || autoOutput;
+const preMixedAudioPath = path.join(PROJECT_ROOT, "assets", "se_mix_16s.wav");
+const useFastAudio = !noFastAudio && process.env.SSR_FAST_AUDIO !== "0" && fs.existsSync(preMixedAudioPath);
 
 const liteFps = process.env.SSR_LITE_FPS || "24";
 const liteCrf = process.env.SSR_LITE_CRF || "20";
@@ -423,8 +442,8 @@ const cmdArgs = [
   "-w",
   String(liteWorkers),
 ];
-if (!hasExplicitOutput) {
-  cmdArgs.push("-o", autoOutput);
+if (!useFastAudio || dryRun) {
+  cmdArgs.push("-o", finalOutput);
 }
 const hasCliVars = Object.keys(cliVars).length > 0;
 const encodedVars = hasCliVars ? encodeVariablesForHyperFrames(cliVars) : null;
@@ -438,7 +457,8 @@ const syncReasonText = forceTypo ? ["forced", ...syncStatus.reasons] : syncStatu
 
 if (dryRun) {
   console.log(`[dry-run] preset=${preset}`);
-  console.log(`[dry-run] output=${hasExplicitOutput ? "(custom -o)" : autoOutput}`);
+  console.log(`[dry-run] output=${finalOutput}`);
+  console.log(`[dry-run] fastAudio=${useFastAudio ? "enabled (assets/se_mix_16s.wav + ffmpeg mux)" : "disabled"}`);
   console.log(
     `[dry-run] typoSync=${shouldSyncTypo ? `needs-sync (${syncReasonText.join(", ")})` : noAutoTypo ? "skipped (--no-auto-typo)" : "up-to-date"}`
   );
@@ -459,8 +479,9 @@ if (shouldSyncTypo) {
     SSR_RESOLVED_CONFIG_JSON: JSON.stringify(effectiveCfg),
   };
 
+  const pythonBin = process.env.SSR_PYTHON || "python";
   console.log(`[typo-sync] Regenerating typography (${syncReasonText.join(", ")})...`);
-  const pyRes = spawnSync("python", ["scripts/render_typography.py", "--overrides-stdin"], {
+  const pyRes = spawnSync(pythonBin, ["scripts/render_typography.py", "--overrides-stdin"], {
     cwd: PROJECT_ROOT,
     input: JSON.stringify(cliVars),
     env: envWithOverrides,
@@ -487,7 +508,7 @@ if (shouldSyncTypo) {
       ["scripts/render_optics.py", "--cutin-only"],
     ];
     for (const [script, ...args] of layoutScripts) {
-      const r = spawnSync("python", [script, ...args], {
+      const r = spawnSync(pythonBin, [script, ...args], {
         cwd: PROJECT_ROOT,
         env: envWithOverrides,
         stdio: "inherit",
@@ -514,14 +535,29 @@ const isWin = process.platform === "win32";
 // Muse VM 等でのプライベート HOME 権限 700 再適用 ＆ 大容量 TMPDIR 自動確保 (§7)
 const childEnv = { ...process.env };
 if (!isWin) {
-  const hfHomeDir = process.env.SSR_HF_HOME || path.join(PROJECT_ROOT, ".hf_home");
-  if (fs.existsSync(hfHomeDir)) {
+  let hfHomeDir = process.env.SSR_HF_HOME;
+  if (!hfHomeDir) {
+    let isGroupOrWorldWritable = false;
     try {
-      fs.chmodSync(hfHomeDir, 0o700);
-      childEnv.HOME = hfHomeDir;
+      const rootStat = fs.statSync(PROJECT_ROOT);
+      isGroupOrWorldWritable = (rootStat.mode & 0o022) !== 0;
     } catch {
-      // ignore chmod errors
+      // ignore stat errors
     }
+    if (isGroupOrWorldWritable) {
+      const uid = typeof process.getuid === "function" ? process.getuid() : "user";
+      hfHomeDir = path.join(os.tmpdir(), `ssr_hf_home_${uid}`);
+    } else {
+      hfHomeDir = path.join(PROJECT_ROOT, ".hf_home");
+    }
+  }
+  try {
+    fs.mkdirSync(hfHomeDir, { recursive: true });
+    fs.chmodSync(hfHomeDir, 0o700);
+    childEnv.SSR_HF_HOME = hfHomeDir;
+    childEnv.HOME = hfHomeDir;
+  } catch {
+    // ignore mkdir/chmod errors
   }
   const customTmpDir = process.env.SSR_TMPDIR || path.join(PROJECT_ROOT, ".tmp");
   try {
@@ -532,15 +568,32 @@ if (!isWin) {
   }
 }
 
+const tmpBase = childEnv.TMPDIR && fs.existsSync(childEnv.TMPDIR) ? childEnv.TMPDIR : os.tmpdir();
 let tmpVarsPath = null;
 if (hasCliVars) {
-  const tmpBase = childEnv.TMPDIR && fs.existsSync(childEnv.TMPDIR) ? childEnv.TMPDIR : os.tmpdir();
   tmpVarsPath = path.join(tmpBase, `ssr-hf-vars-${process.pid}-${Date.now()}.json`);
   fs.writeFileSync(tmpVarsPath, JSON.stringify(encodedVars), "utf8");
   cmdArgs.push("--variables", tmpVarsPath);
 }
 
+let tmpNoAudioHtmlName = null;
+let tmpNoAudioHtmlPath = null;
+let tmpVideoPath = null;
+if (useFastAudio) {
+  const indexHtmlPath = path.join(PROJECT_ROOT, "index.html");
+  const indexHtmlText = fs.readFileSync(indexHtmlPath, "utf8");
+  const strippedHtmlText = indexHtmlText.replace(/<audio\b[^>]*>[\s\S]*?<\/audio>/gi, "");
+  tmpNoAudioHtmlName = `hf_noaudio_${process.pid}_${Date.now()}.html`;
+  tmpNoAudioHtmlPath = path.join(PROJECT_ROOT, tmpNoAudioHtmlName);
+  fs.writeFileSync(tmpNoAudioHtmlPath, strippedHtmlText, "utf8");
+
+  tmpVideoPath = path.join(tmpBase, `ssr-hf-video-${process.pid}-${Date.now()}.mp4`);
+  cmdArgs.push("--composition", tmpNoAudioHtmlName, "-o", tmpVideoPath);
+  console.log(`[audio-fast] Bypassing HyperFrames audio mix -> muxing pre-mixed assets/se_mix_16s.wav via ffmpeg`);
+}
+
 let res;
+let finalStatus = 1;
 try {
   res = spawnSync(isWin ? "npx.cmd" : "npx", cmdArgs, {
     cwd: PROJECT_ROOT,
@@ -548,14 +601,58 @@ try {
     stdio: "inherit",
     shell: isWin,
   });
+  finalStatus = res.status ?? 1;
+
+  if (finalStatus === 0 && useFastAudio) {
+    const finalAbsOutput = path.isAbsolute(finalOutput) ? finalOutput : path.resolve(PROJECT_ROOT, finalOutput);
+    fs.mkdirSync(path.dirname(finalAbsOutput), { recursive: true });
+    const muxRes = spawnSync(
+      "ffmpeg",
+      [
+        "-y",
+        "-i",
+        tmpVideoPath,
+        "-i",
+        preMixedAudioPath,
+        "-c:v",
+        "copy",
+        "-c:a",
+        "aac",
+        "-b:a",
+        "192k",
+        "-movflags",
+        "+faststart",
+        "-loglevel",
+        "warning",
+        finalAbsOutput,
+      ],
+      {
+        cwd: PROJECT_ROOT,
+        env: childEnv,
+        stdio: "inherit",
+        shell: false,
+      }
+    );
+    if (muxRes.error) {
+      console.error(`[audio-fast] Failed to spawn ffmpeg: ${muxRes.error.message}`);
+      finalStatus = 1;
+    } else {
+      finalStatus = muxRes.status ?? 1;
+      if (finalStatus === 0) {
+        console.log(`[audio-fast] Muxed complete -> ${finalOutput}`);
+      }
+    }
+  }
 } finally {
-  if (tmpVarsPath && fs.existsSync(tmpVarsPath)) {
-    try {
-      fs.unlinkSync(tmpVarsPath);
-    } catch {
-      // ignore cleanup error
+  for (const p of [tmpVarsPath, tmpNoAudioHtmlPath, tmpVideoPath]) {
+    if (p && fs.existsSync(p)) {
+      try {
+        fs.unlinkSync(p);
+      } catch {
+        // ignore cleanup error
+      }
     }
   }
 }
 
-process.exit(res.status ?? 1);
+process.exit(finalStatus);

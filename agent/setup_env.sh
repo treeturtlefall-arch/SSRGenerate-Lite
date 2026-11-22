@@ -15,10 +15,18 @@ export PATH="${PROJECT_ROOT}/.venv/bin:${PATH}"
 python -m pip install --upgrade pip -q
 python -m pip install -r requirements.txt -q
 
-echo "=== [2/4] Preparing private HOME (.hf_home, mode 700) & TMPDIR (.tmp) ==="
-mkdir -p "${PROJECT_ROOT}/.hf_home" "${PROJECT_ROOT}/.tmp"
-chmod 700 "${PROJECT_ROOT}/.hf_home"
-export HOME="${PROJECT_ROOT}/.hf_home"
+echo "=== [2/4] Preparing private HOME (mode 700) & TMPDIR (.tmp) ==="
+if [ -n "${SSR_HF_HOME:-}" ]; then
+  HF_HOME_DIR="${SSR_HF_HOME}"
+elif find "${PROJECT_ROOT}" -maxdepth 0 -perm /022 2>/dev/null | grep -q .; then
+  HF_HOME_DIR="${TMPDIR:-/tmp}/ssr_hf_home_$(id -u)"
+else
+  HF_HOME_DIR="${PROJECT_ROOT}/.hf_home"
+fi
+mkdir -p "${HF_HOME_DIR}" "${PROJECT_ROOT}/.tmp"
+chmod 700 "${HF_HOME_DIR}"
+export SSR_HF_HOME="${HF_HOME_DIR}"
+export HOME="${HF_HOME_DIR}"
 export TMPDIR="${PROJECT_ROOT}/.tmp"
 
 echo "=== [3/4] Fetching pinned fonts & building deterministic assets ==="

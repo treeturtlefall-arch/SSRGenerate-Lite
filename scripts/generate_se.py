@@ -453,6 +453,9 @@ def main() -> None:
     for fname, bm, _, _ in mastered_tracks:
         _save_pcm16_wav(ASSETS_DIR / fname, bm)
 
+    # 16.0s 統合マスター WAV も出力（render_video.mjs での高速 FFmpeg mux 用）
+    _save_pcm16_wav(ASSETS_DIR / "se_mix_16s.wav", master_final)
+
     final_lufs = measure_lufs(master_final, sr=SR)
     peak_lin = float(np.max(np.abs(master_final)))
     peak_db = 20.0 * np.log10(max(peak_lin, 1e-9))

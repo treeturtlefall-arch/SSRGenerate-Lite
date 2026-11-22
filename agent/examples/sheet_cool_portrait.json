@@ -7,7 +7,7 @@
   "rarity": "SSR",
   "stars": 0,
   "attributeBadge": "光",
-  "attributeLabel": "SOVEREIGN",
+  "attributeLabel": "EMPEROR",
   "cardNo": "NO.777-SSR",
   "typography": {
     "preset": "royal-foil"
@@ -16,7 +16,7 @@
   "photoPosition": "50% 35%",
   "photoZoom": 1.05,
   "resultRingMode": "rainbow",
-  "seed": 20261777,
+  "seed": 20261121,
   "mode": "sheet",
   "agentNotes": "縦モード・かっこいい系（royal-foil）の標準記入シート例。"
 }

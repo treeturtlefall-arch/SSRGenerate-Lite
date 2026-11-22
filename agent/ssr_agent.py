@@ -17,8 +17,10 @@ import json
 import os
 import platform
 import shutil
+import stat
 import subprocess
 import sys
+import tempfile
 import time
 import urllib.request
 from pathlib import Path
@@ -65,20 +67,38 @@ def _sha256_file(path: Path) -> str:
     return h.hexdigest()
 
 
+def _resolve_hf_home(env: Dict[str, str]) -> Path:
+    """HyperFrames 用のプライベート HOME を決定する（グループ書込可能な VM ワークスペースでは /tmp へ退避）"""
+    explicit = env.get("SSR_HF_HOME")
+    if explicit:
+        return Path(explicit)
+    try:
+        root_mode = PROJECT_ROOT.stat().st_mode
+        if root_mode & (stat.S_IWGRP | stat.S_IWOTH):
+            uid = os.getuid() if hasattr(os, "getuid") else "user"
+            return Path(tempfile.gettempdir()) / f"ssr_hf_home_{uid}"
+    except OSError:
+        pass
+    return PROJECT_ROOT / ".hf_home"
+
+
 def _prepare_runtime_env() -> Dict[str, str]:
-    """Muse VM 等の制約に合わせてプライベート HOME (700) と大容量 TMPDIR を設定した環境変数を返す (§7)"""
+    """Muse VM 等の制約に合わせて venv PATH・プライベート HOME (700)・大容量 TMPDIR を設定した環境変数を返す (§7)"""
     env = os.environ.copy()
-    venv_bin = Path(sys.executable).resolve().parent
+    # resolve() すると Linux venv の python シンボリックリンクが /usr/bin に解決されるため parent のみ参照
+    venv_bin = Path(sys.executable).parent
     path_sep = os.pathsep
     env["PATH"] = f"{venv_bin}{path_sep}{env.get('PATH', '')}"
+    env["SSR_PYTHON"] = sys.executable
 
     if os.name != "nt":
-        hf_home = Path(env.get("SSR_HF_HOME", str(PROJECT_ROOT / ".hf_home")))
+        hf_home = _resolve_hf_home(env)
         hf_home.mkdir(parents=True, exist_ok=True)
         try:
             os.chmod(hf_home, 0o700)
         except OSError:
             pass
+        env["SSR_HF_HOME"] = str(hf_home)
         env["HOME"] = str(hf_home)
 
         tmp_dir = Path(env.get("SSR_TMPDIR", str(PROJECT_ROOT / ".tmp")))
@@ -317,37 +337,44 @@ def cmd_setup(args: argparse.Namespace) -> int:
         return build_res.returncode
 
     check_passed = True
+    check_skipped_reason: Optional[str] = None
     if not args.skip_check:
-        npx_bin = "npx.cmd" if os.name == "nt" else "npx"
-        check_res = subprocess.run(
-            [npx_bin, "--yes", "hyperframes@0.9.72", "check"],
-            cwd=str(PROJECT_ROOT),
-            env=env,
-            capture_output=args.json,
-            text=True,
-            encoding="utf-8",
-            shell=(os.name == "nt"),
-        )
-        check_passed = check_res.returncode == 0
-        if not check_passed:
-            err_payload = {
-                "status": "error",
-                "stage": "hyperframes_check",
-                "returncode": check_res.returncode,
-                "stdout": check_res.stdout if args.json else "",
-                "stderr": check_res.stderr if args.json else "",
-            }
-            if args.json:
-                print(json.dumps(err_payload, ensure_ascii=False, indent=2))
-            return check_res.returncode
+        if not (ASSETS_DIR / "photo.jpg").is_file():
+            check_passed = False
+            check_skipped_reason = "assets/photo.jpg not found; skipped hyperframes check"
+        else:
+            npx_bin = "npx.cmd" if os.name == "nt" else "npx"
+            check_res = subprocess.run(
+                [npx_bin, "--yes", "hyperframes@0.9.72", "check"],
+                cwd=str(PROJECT_ROOT),
+                env=env,
+                capture_output=args.json,
+                text=True,
+                encoding="utf-8",
+                shell=(os.name == "nt"),
+            )
+            check_passed = check_res.returncode == 0
+            if not check_passed:
+                err_payload = {
+                    "status": "error",
+                    "stage": "hyperframes_check",
+                    "returncode": check_res.returncode,
+                    "stdout": check_res.stdout if args.json else "",
+                    "stderr": check_res.stderr if args.json else "",
+                }
+                if args.json:
+                    print(json.dumps(err_payload, ensure_ascii=False, indent=2))
+                return check_res.returncode
 
     elapsed = round(time.perf_counter() - t0, 2)
-    payload = {
+    payload: Dict[str, Any] = {
         "status": "ok",
         "fetchedFonts": fetched_fonts,
         "checkPassed": check_passed,
         "elapsedSec": elapsed,
     }
+    if check_skipped_reason:
+        payload["checkSkippedReason"] = check_skipped_reason
     if args.json:
         print(json.dumps(payload, ensure_ascii=False, indent=2))
     else:
@@ -405,7 +432,7 @@ def _execute_render_pipeline(
 
     # 初回フォント・アセット未生成なら自動補完
     ensure_fonts(verbose=not as_json)
-    if not (GENERATED_DIR / "opt_result_ring_rainbow.png").is_file() or not (ASSETS_DIR / "se_fanfare.wav").is_file():
+    if not (GENERATED_DIR / "opt_result_ring_rainbow.png").is_file() or not (ASSETS_DIR / "se_mix_16s.wav").is_file():
         subprocess.run(
             [sys.executable, str(SCRIPTS_DIR / "build_all.py")],
             cwd=str(PROJECT_ROOT),

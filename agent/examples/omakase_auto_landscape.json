@@ -16,7 +16,7 @@
   "photoPosition": "45% 50%",
   "photoZoom": 1.05,
   "resultRingMode": "rainbow",
-  "seed": 20261512,
+  "seed": 20261122,
   "mode": "omakase",
   "agentNotes": "orientation=auto により入力写真の縦横比から向きを自動判定するおまかせシート例。"
 }
