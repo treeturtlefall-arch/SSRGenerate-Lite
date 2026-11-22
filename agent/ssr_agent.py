@@ -67,19 +67,106 @@ def _sha256_file(path: Path) -> str:
     return h.hexdigest()
 
 
+# HyperFrames はキャッシュ配置先に「配置先自身と全ての親ディレクトリが
+# グループ/他者から書込不可 (sticky ビット付きの /tmp 等は可)」であることと、
+# Chrome 本体のダウンロード用に約 512 MB 以上の空き容量を要求する。
+# 実測ではキャッシュ一式で約 550 MB を使うため、選択時の空き容量の下限は 1 GiB とする。
+HF_HOME_MIN_FREE_BYTES = 1 << 30
+
+
+def _hf_chain_is_private(path: Path) -> bool:
+    """path からルートまで遡り、グループ/他者書込可能な祖先 (sticky な /tmp 等は除く) が無いことを確認する"""
+    current = path
+    while True:
+        try:
+            mode = current.stat().st_mode
+            if (mode & (stat.S_IWGRP | stat.S_IWOTH)) and not (mode & stat.S_ISVTX):
+                return False
+        except OSError:
+            pass  # 未作成の途中ディレクトリは mkdir 時に標準権限で作られるため検査対象外とする
+        parent = current.parent
+        if parent == current:
+            return True
+        current = parent
+
+
+def _hf_free_space_ok(path: Path) -> bool:
+    """Chrome のダウンロードに足る空き容量があるか（既にキャッシュ済みなら空きが少なくても可）"""
+    if (path / ".cache" / "hyperframes").is_dir():
+        return True
+    probe = path
+    while not probe.exists():
+        if probe.parent == probe:
+            return False
+        probe = probe.parent
+    try:
+        return shutil.disk_usage(probe).free >= HF_HOME_MIN_FREE_BYTES
+    except OSError:
+        return False
+
+
+def _hf_home_candidates() -> List[Path]:
+    """HF HOME の候補を優先順に返す（プライベート性と空き容量で検証してから使う）"""
+    candidates: List[Path] = [PROJECT_ROOT / ".hf_home"]
+    cache_bases: List[Path] = []
+    xdg_cache = os.environ.get("XDG_CACHE_HOME")
+    if xdg_cache:
+        cache_bases.append(Path(xdg_cache))
+    home = os.environ.get("HOME")
+    if home:
+        cache_bases.append(Path(home) / ".cache")
+    try:
+        import pwd
+
+        # $HOME が共有ツリーを指す環境 (Muse VM の root 等) でも、passwd 上の
+        # 本来のホームはプライベートなことが多いため候補に加える
+        cache_bases.append(Path(pwd.getpwuid(os.getuid()).pw_dir) / ".cache")
+    except Exception:
+        pass
+    for base in cache_bases:
+        cand = base / "ssr-generate-lite" / "hf_home"
+        if cand not in candidates:
+            candidates.append(cand)
+    uid = os.getuid() if hasattr(os, "getuid") else "user"
+    var_tmp = Path("/var/tmp")
+    if var_tmp.is_dir():
+        cand = var_tmp / f"ssr_hf_home_{uid}"
+        if cand not in candidates:
+            candidates.append(cand)
+    tmp_cand = Path(tempfile.gettempdir()) / f"ssr_hf_home_{uid}"
+    if tmp_cand not in candidates:
+        candidates.append(tmp_cand)
+    return candidates
+
+
 def _resolve_hf_home(env: Dict[str, str]) -> Path:
-    """HyperFrames 用のプライベート HOME を決定する（グループ書込可能な VM ワークスペースでは /tmp へ退避）"""
+    """HyperFrames 用のプライベート HOME を決定する
+
+    候補を優先順に「親ディレクトリまで含めたプライベート性」と「空き容量 1 GiB 以上」
+    で検証し、最初に条件を満たした場所を使う。どの候補も満たさない場合は、
+    HyperFrames 側の分かりにくいエラーの代わりに、条件と対処法を明示して終了する。
+    """
     explicit = env.get("SSR_HF_HOME")
     if explicit:
         return Path(explicit)
-    try:
-        root_mode = PROJECT_ROOT.stat().st_mode
-        if root_mode & (stat.S_IWGRP | stat.S_IWOTH):
-            uid = os.getuid() if hasattr(os, "getuid") else "user"
-            return Path(tempfile.gettempdir()) / f"ssr_hf_home_{uid}"
-    except OSError:
-        pass
-    return PROJECT_ROOT / ".hf_home"
+    skipped: List[str] = []
+    for cand in _hf_home_candidates():
+        if not _hf_chain_is_private(cand):
+            skipped.append(f"{cand}（親ディレクトリがグループ/他者書込可能）")
+            continue
+        if not _hf_free_space_ok(cand):
+            skipped.append(f"{cand}（空き容量が 1 GiB 未満）")
+            continue
+        if skipped:
+            print(f"[env] HF HOME: {cand}（skipped: {'; '.join(skipped)}）", file=sys.stderr)
+        return cand
+    reasons = "; ".join(skipped) if skipped else "候補なし"
+    raise SystemExit(
+        "HyperFrames 用のプライベート HOME を確保できませんでした。"
+        f"候補と却下理由: {reasons}。"
+        "環境変数 SSR_HF_HOME に「親ディレクトリまで含めてグループ/他者書込不可で、"
+        "空き容量 1 GiB 以上」のディレクトリを指定してください。"
+    )
 
 
 def _prepare_runtime_env() -> Dict[str, str]:
@@ -93,7 +180,22 @@ def _prepare_runtime_env() -> Dict[str, str]:
 
     if os.name != "nt":
         hf_home = _resolve_hf_home(env)
+        # mkdir 前に存在しなかった途中ディレクトリを記録し、作成後に 700 へ寄せる。
+        # umask が緩い環境 (例: 0007 の Muse VM) では mkdir がグループ書込可能な
+        # 中間ディレクトリを作り、HyperFrames のプライベート性チェックに落ちるため。
+        missing: List[Path] = []
+        probe = hf_home
+        while not probe.exists():
+            missing.append(probe)
+            if probe.parent == probe:
+                break
+            probe = probe.parent
         hf_home.mkdir(parents=True, exist_ok=True)
+        for created in missing:
+            try:
+                os.chmod(created, 0o700)
+            except OSError:
+                pass
         try:
             os.chmod(hf_home, 0o700)
         except OSError:

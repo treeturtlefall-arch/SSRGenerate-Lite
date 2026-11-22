@@ -537,22 +537,107 @@ const childEnv = { ...process.env };
 if (!isWin) {
   let hfHomeDir = process.env.SSR_HF_HOME;
   if (!hfHomeDir) {
-    let isGroupOrWorldWritable = false;
+    // HF HOME の選択方針は agent/ssr_agent.py の _resolve_hf_home と同一:
+    // HyperFrames は「配置先自身と全ての親がグループ/他者書込不可 (sticky な /tmp 等は可)」と
+    // Chrome ダウンロード用の空き容量 (約 512 MB 以上) を要求するため、候補を優先順に
+    // プライベート性と空き容量 (1 GiB 以上、キャッシュ済みは除く) で検証して選ぶ。
+    const HF_MIN_FREE_BYTES = 1024 ** 3;
+    const hfChainIsPrivate = (p) => {
+      let cur = p;
+      while (true) {
+        try {
+          const mode = fs.statSync(cur).mode;
+          if ((mode & 0o022) !== 0 && (mode & 0o1000) === 0) return false;
+        } catch {
+          // 未作成の途中ディレクトリは mkdir 時に標準権限で作られるため検査対象外
+        }
+        const parent = path.dirname(cur);
+        if (parent === cur) return true;
+        cur = parent;
+      }
+    };
+    const hfFreeSpaceOk = (p) => {
+      if (fs.existsSync(path.join(p, ".cache", "hyperframes"))) return true;
+      let probe = p;
+      while (!fs.existsSync(probe)) {
+        const parent = path.dirname(probe);
+        if (parent === probe) return false;
+        probe = parent;
+      }
+      try {
+        const st = fs.statfsSync(probe);
+        return st.bavail * st.bsize >= HF_MIN_FREE_BYTES;
+      } catch {
+        return false;
+      }
+    };
+    const uid = typeof process.getuid === "function" ? process.getuid() : "user";
+    const hfCandidates = [path.join(PROJECT_ROOT, ".hf_home")];
+    const cacheBases = [];
+    if (process.env.XDG_CACHE_HOME) cacheBases.push(process.env.XDG_CACHE_HOME);
+    if (process.env.HOME) cacheBases.push(path.join(process.env.HOME, ".cache"));
     try {
-      const rootStat = fs.statSync(PROJECT_ROOT);
-      isGroupOrWorldWritable = (rootStat.mode & 0o022) !== 0;
+      // $HOME が共有ツリーを指す環境でも passwd 上の本来のホームは候補に加える
+      cacheBases.push(path.join(os.userInfo().homedir, ".cache"));
     } catch {
-      // ignore stat errors
+      // ignore userInfo errors
     }
-    if (isGroupOrWorldWritable) {
-      const uid = typeof process.getuid === "function" ? process.getuid() : "user";
-      hfHomeDir = path.join(os.tmpdir(), `ssr_hf_home_${uid}`);
-    } else {
-      hfHomeDir = path.join(PROJECT_ROOT, ".hf_home");
+    for (const base of cacheBases) {
+      const cand = path.join(base, "ssr-generate-lite", "hf_home");
+      if (!hfCandidates.includes(cand)) hfCandidates.push(cand);
+    }
+    if (fs.existsSync("/var/tmp")) {
+      const cand = path.join("/var/tmp", `ssr_hf_home_${uid}`);
+      if (!hfCandidates.includes(cand)) hfCandidates.push(cand);
+    }
+    const tmpCand = path.join(os.tmpdir(), `ssr_hf_home_${uid}`);
+    if (!hfCandidates.includes(tmpCand)) hfCandidates.push(tmpCand);
+
+    const skipped = [];
+    for (const cand of hfCandidates) {
+      if (!hfChainIsPrivate(cand)) {
+        skipped.push(`${cand}（親ディレクトリがグループ/他者書込可能）`);
+        continue;
+      }
+      if (!hfFreeSpaceOk(cand)) {
+        skipped.push(`${cand}（空き容量が 1 GiB 未満）`);
+        continue;
+      }
+      hfHomeDir = cand;
+      if (skipped.length > 0) {
+        console.log(`[env] HF HOME: ${cand}（skipped: ${skipped.join("; ")}）`);
+      }
+      break;
+    }
+    if (!hfHomeDir) {
+      console.error(
+        "HyperFrames 用のプライベート HOME を確保できませんでした。" +
+          `候補と却下理由: ${skipped.join("; ")}。` +
+          "環境変数 SSR_HF_HOME に「親ディレクトリまで含めてグループ/他者書込不可で、空き容量 1 GiB 以上」のディレクトリを指定してください。"
+      );
+      process.exit(1);
     }
   }
   try {
+    // mkdir 前に存在しなかった途中ディレクトリは作成後に 700 へ寄せる
+    // (umask が緩い環境では mkdir がグループ書込可能な中間ディレクトリを作り、
+    //  HyperFrames のプライベート性チェックに落ちるため。ssr_agent.py と同じ対処)
+    const missingDirs = [];
+    let probeDir = hfHomeDir;
+    while (!fs.existsSync(probeDir)) {
+      missingDirs.push(probeDir);
+      const parent = path.dirname(probeDir);
+      if (parent === probeDir) break;
+      probeDir = parent;
+    }
     fs.mkdirSync(hfHomeDir, { recursive: true });
+    for (const created of missingDirs) {
+      try {
+        fs.chmodSync(created, 0o700);
+      } catch {
+        // ignore chmod errors
+      }
+    }
     fs.chmodSync(hfHomeDir, 0o700);
     childEnv.SSR_HF_HOME = hfHomeDir;
     childEnv.HOME = hfHomeDir;

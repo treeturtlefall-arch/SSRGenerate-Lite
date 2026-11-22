@@ -16,7 +16,7 @@ bash agent/setup_env.sh
 ```
 
 > **Muse VM 注意事項 (§7)**:
-> - Python は必ず `.venv/bin/python` 経由で実行します（`ssr_agent.py` 内部で `.venv` の `PATH` 優先、`SSR_PYTHON`、プライベート `HOME` (`chmod 700`)、`.tmp` (`TMPDIR`) が自動設定されます。グループ書込可能なワークスペースでは自動で `/tmp/ssr_hf_home_<uid>` へ退避し、環境変数 `SSR_HF_HOME` で任意パスへの上書きも可能です）。
+> - Python は必ず `.venv/bin/python` 経由で実行します（`ssr_agent.py` 内部で `.venv` の `PATH` 優先、`SSR_PYTHON`、プライベート `HOME` (`chmod 700`)、`.tmp` (`TMPDIR`) が自動設定されます。HF HOME はプロジェクト内 `.hf_home` → ユーザーキャッシュ配下（`~/.cache/ssr-generate-lite/hf_home` 等）→ `/var/tmp` → システム一時領域の順に、親ディレクトリまで含めたプライベート性と空き容量（1 GiB 以上）で検証して自動選択され、環境変数 `SSR_HF_HOME` で任意パスへの上書きも可能です）。
 
 環境・対応プリセットの確認:
 
