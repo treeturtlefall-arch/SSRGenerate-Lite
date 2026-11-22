@@ -1,0 +1,773 @@
+@import "./shared-base.css";
+
+#scene-summon-stage {
+  z-index: 10;
+  background: var(--bg-void-gradient);
+}
+
+#summon-grain {
+  z-index: 5;
+}
+
+#summon-camera {
+  position: absolute;
+  inset: 0;
+  width: var(--canvas-w);
+  height: var(--canvas-h);
+  transform-origin: 50% 47%;
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* 0.0s 冒頭点火スパーク */
+#ignition-spark {
+  position: absolute;
+  left: 50%;
+  top: 47%;
+  width: 320px;
+  height: 320px;
+  margin-left: -160px;
+  margin-top: -160px;
+  opacity: 0;
+  mix-blend-mode: screen;
+  background-image: url("../assets/generated/opt_sparkle_white.png");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.bg-aura {
+  position: absolute;
+  left: 50%;
+  top: 47%;
+  width: 1600px;
+  height: 1600px;
+  margin-left: -800px;
+  margin-top: -800px;
+  opacity: 0;
+  mix-blend-mode: screen;
+}
+
+#aura-blue {
+  background: radial-gradient(
+    circle closest-side var(--in-oklab),
+    rgba(116, 186, 245, 0.56) 0%,
+    rgba(26, 75, 156, 0.30) 45%,
+    rgba(4, 6, 17, 0) 96%
+  );
+}
+
+#aura-gold {
+  background: radial-gradient(
+    circle closest-side var(--in-oklab),
+    rgba(242, 223, 179, 0.72) 0%,
+    rgba(212, 162, 76, 0.36) 44%,
+    rgba(46, 25, 5, 0) 96%
+  );
+}
+
+#aura-rainbow {
+  background:
+    radial-gradient(circle closest-side at 42% 45% var(--in-oklab), rgba(118, 212, 238, 0.42) 0%, transparent 92%),
+    radial-gradient(circle closest-side at 58% 55% var(--in-oklab), rgba(232, 141, 180, 0.42) 0%, transparent 92%),
+    radial-gradient(circle closest-side at 50% 50% var(--in-oklab), rgba(242, 223, 179, 0.48) 0%, rgba(162, 134, 235, 0.22) 48%, transparent 96%);
+}
+
+/* 不規則ゴッドレイ 2 層（rave_lasers.hlsl 式） */
+.summon-godrays-layer {
+  position: absolute;
+  left: 50%;
+  top: 47%;
+  width: 1900px;
+  height: 1900px;
+  margin-left: -950px;
+  margin-top: -950px;
+  opacity: 0;
+  mix-blend-mode: screen;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+#summon-godrays-a {
+  background-image: url("../assets/generated/opt_godrays_prism_a.png");
+}
+
+#summon-godrays-b {
+  display: none; /* Lite デチューン: 巨大 screen 合成レイヤーを 1 枚に統合 */
+}
+
+/* 縦ストリーク光柱 2 層（aurora_claude.hlsl 式） */
+#light-pillar,
+#light-pillar-rainbow {
+  position: absolute;
+  left: 50%;
+  top: 80px;
+  width: 520px;
+  height: 1680px;
+  margin-left: -260px;
+  opacity: 0;
+  mix-blend-mode: screen;
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+#light-pillar {
+  background-image: url("../assets/generated/opt_pillar_gold.png");
+}
+
+#light-pillar-rainbow {
+  background-image: url("../assets/generated/opt_pillar_rainbow.png");
+}
+
+/* [A] 3D 天蓋・逆さ天球ゲート（Celestial Astrolabe Gate） */
+#celestial-gate-perspective {
+  position: absolute;
+  inset: 0;
+  perspective: 1100px;
+  perspective-origin: 50% 24%;
+  pointer-events: none;
+}
+
+#celestial-gate-wrap {
+  position: absolute;
+  left: 50%;
+  top: 10%;
+  width: 1024px;
+  height: 1024px;
+  margin-left: -512px;
+  margin-top: -512px;
+  opacity: 0;
+  mix-blend-mode: screen;
+  transform-origin: 50% 50%;
+}
+
+.gate-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.gate-ring {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  transform-origin: 50% 50%;
+}
+
+#gate-gold,
+#gate-rainbow {
+  opacity: 0;
+}
+
+/* [D] 上空2層パララックス浮遊クリスタル破片 & 遠景星屑 */
+#sky-shards-far,
+#sky-shards-near {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.sky-shard,
+.sky-star {
+  position: absolute;
+  opacity: 0;
+  mix-blend-mode: screen;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+/* [C] 冒頭降臨流体ウィスプ・ストリーム & 昇格時の天啓光撃（黄金光槍・プリズム落雷） */
+#wisp-streams {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.wisp-node,
+.wisp-head {
+  position: absolute;
+  left: 50%;
+  top: 47%;
+  opacity: 0;
+  mix-blend-mode: screen;
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  transform-origin: 50% 50%;
+  pointer-events: none;
+}
+
+.wisp-node-blue {
+  background-image: url("../assets/generated/opt_meteor_blue.png");
+}
+
+.wisp-node-red {
+  background-image: url("../assets/generated/opt_meteor_red.png");
+}
+
+.wisp-node-green {
+  background-image: url("../assets/generated/opt_meteor_green.png");
+}
+
+.wisp-head-blue {
+  background-image: url("../assets/generated/opt_wisp_head_blue.png");
+}
+
+.wisp-head-red {
+  background-image: url("../assets/generated/opt_wisp_head_red.png");
+}
+
+.wisp-head-green {
+  background-image: url("../assets/generated/opt_wisp_head_green.png");
+}
+
+.sky-bolt {
+  position: absolute;
+  left: 50%;
+  top: 72px;
+  opacity: 0;
+  mix-blend-mode: screen;
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  transform-origin: 50% 5%;
+  pointer-events: none;
+}
+
+#bolt-gold {
+  width: 384px;
+  height: 980px;
+  margin-left: -192px;
+  background-image: url("../assets/generated/opt_bolt_gold.png");
+}
+
+#bolt-prism {
+  width: 512px;
+  height: 980px;
+  margin-left: -256px;
+  background-image: url("../assets/generated/opt_bolt_prism.png");
+}
+
+/* 3D 床パース魔法陣 */
+#magic-circle-perspective {
+  position: absolute;
+  inset: 0;
+  perspective: 1100px;
+  perspective-origin: 50% 42%;
+  pointer-events: none;
+}
+
+#magic-circle-wrap {
+  position: absolute;
+  left: 50%;
+  top: 52%;
+  width: 1024px;
+  height: 1024px;
+  margin-left: -512px;
+  margin-top: -512px;
+  opacity: 0;
+  mix-blend-mode: screen;
+  transform-origin: 50% 50%;
+}
+
+.mc-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.mc-ring {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  transform-origin: 50% 50%;
+}
+
+#mc-gold,
+#mc-rainbow {
+  opacity: 0;
+}
+
+/* 収束粒子 */
+#converge-particles {
+  position: absolute;
+  inset: 0;
+}
+
+.c-particle {
+  position: absolute;
+  left: 50%;
+  top: 47%;
+  border-radius: 50%;
+  opacity: 0;
+  mix-blend-mode: screen;
+}
+
+/* 光学衝撃波リング */
+.shockwave {
+  position: absolute;
+  left: 50%;
+  top: 47%;
+  width: 640px;
+  height: 640px;
+  margin-left: -320px;
+  margin-top: -320px;
+  opacity: 0;
+  mix-blend-mode: screen;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+#shock-gold {
+  background-image: url("../assets/generated/opt_shock_gold.png");
+}
+
+#shock-rainbow {
+  background-image: url("../assets/generated/opt_shock_rainbow.png");
+}
+
+/* 真空暗転レイヤー */
+#vacuum-dimmer {
+  position: absolute;
+  inset: -80px;
+  background: radial-gradient(
+    circle at 50% 47%,
+    rgba(2, 3, 9, 0.35) 0%,
+    rgba(2, 3, 9, 0.88) 46%,
+    rgba(2, 3, 9, 0.96) 100%
+  );
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* 多層クリスタルオーブ */
+#orb-wrap {
+  position: absolute;
+  left: 50%;
+  top: 47%;
+  width: 420px;
+  height: 420px;
+  margin-left: -210px;
+  margin-top: -210px;
+  opacity: 0;
+}
+
+.orb-tier {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+#orb-gold,
+#orb-rainbow {
+  opacity: 0;
+}
+
+.orb-shell,
+.orb-facet,
+#orb-core {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  transform-origin: 50% 50%;
+}
+
+.orb-facet,
+#orb-core {
+  mix-blend-mode: screen;
+}
+
+#orb-core {
+  opacity: 0.78;
+}
+
+#orb-cracks {
+  position: absolute;
+  inset: -20px;
+  width: 460px;
+  height: 460px;
+  opacity: 0;
+  mix-blend-mode: screen;
+  display: block;
+  transform-origin: 50% 50%;
+}
+
+/* 昇格閃光（純白ホールドは index.html、ここは光学放射・水平光閃） */
+#flash-gold,
+#flash-rainbow-core {
+  position: absolute;
+  left: 50%;
+  top: 47%;
+  border-radius: 50%;
+  mix-blend-mode: screen;
+  opacity: 0;
+  pointer-events: none;
+}
+
+#flash-gold {
+  width: 1400px;
+  height: 1400px;
+  margin-left: -700px;
+  margin-top: -700px;
+  background: radial-gradient(
+    circle closest-side var(--in-oklab),
+    rgba(255, 254, 248, 1) 0%,
+    rgba(255, 245, 214, 0.90) 20%,
+    rgba(242, 223, 179, 0.48) 44%,
+    rgba(212, 162, 76, 0.14) 72%,
+    transparent 100%
+  );
+}
+
+#flash-rainbow-core {
+  width: 1560px;
+  height: 1560px;
+  margin-left: -780px;
+  margin-top: -780px;
+  background: radial-gradient(
+    circle closest-side var(--in-oklab),
+    rgba(255, 255, 255, 1) 0%,
+    rgba(245, 249, 255, 0.84) 22%,
+    rgba(232, 141, 180, 0.38) 48%,
+    rgba(118, 212, 238, 0.16) 74%,
+    transparent 100%
+  );
+}
+
+#flash-rainbow-streak {
+  position: absolute;
+  left: 0;
+  top: 47%;
+  width: 100%;
+  height: 220px;
+  margin-top: -110px;
+  mix-blend-mode: screen;
+  opacity: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom var(--in-oklab),
+    transparent 0%,
+    rgba(118, 212, 238, 0.42) 32%,
+    rgba(255, 254, 250, 1) 50%,
+    rgba(232, 141, 180, 0.42) 68%,
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    rgba(0, 0, 0, 0.85) 22%,
+    #000 50%,
+    rgba(0, 0, 0, 0.85) 78%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    rgba(0, 0, 0, 0.85) 22%,
+    #000 50%,
+    rgba(0, 0, 0, 0.85) 78%,
+    transparent 100%
+  );
+}
+
+/* [E] 上端フェーズ昇格トラッカー（天蓋の穴の中心・1.3倍サイズ: RESONANCE / ELEVATION / OVERDRIVE） */
+#summon-top-hud {
+  position: absolute;
+  left: 50%;
+  top: 138px;
+  width: 480px;
+  height: 50px;
+  margin-left: -240px;
+  z-index: 22;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 13px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.hud-top-row {
+  width: 290px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+}
+
+.hud-wing {
+  flex: 1;
+  height: 1.3px;
+  background: linear-gradient(
+    to right,
+    transparent 0%,
+    rgba(216, 228, 246, 0.46) 50%,
+    transparent 100%
+  );
+}
+
+.hud-diamonds {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.hud-node {
+  width: 11px;
+  height: 11px;
+  transform: rotate(45deg);
+  border: 1.3px solid rgba(216, 228, 246, 0.46);
+  background: rgba(216, 228, 246, 0.12);
+}
+
+#hud-node-1 {
+  border-color: rgba(140, 206, 255, 0.95);
+  background: #bfe6ff;
+  box-shadow: 0 0 13px rgba(116, 186, 245, 0.90);
+}
+
+.hud-label-stack {
+  position: relative;
+  width: 480px;
+  height: 26px;
+}
+
+.hud-phase-label {
+  position: absolute;
+  inset: 0;
+  text-align: center;
+  font-family: var(--font-ui);
+  font-size: 18.5px;
+  font-weight: 700;
+  letter-spacing: 0.44em;
+  text-indent: 0.44em;
+  line-height: 26px;
+  white-space: nowrap;
+  opacity: 0;
+}
+
+#hud-label-1 {
+  color: #cfe7fb;
+  text-shadow: 0 0 12px rgba(116, 186, 245, 0.45);
+  opacity: 1;
+}
+
+#hud-label-2 {
+  color: #f4e2bc;
+  text-shadow: 0 0 14px rgba(212, 162, 76, 0.55);
+}
+
+#hud-label-3 {
+  color: #ffffff;
+  text-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.85),
+    0 0 14px rgba(232, 141, 180, 0.65),
+    0 0 24px rgba(118, 212, 238, 0.45);
+}
+
+/* 脱ベタ帯シネマティック・カットイン */
+#cutin-band {
+  position: absolute;
+  left: 0;
+  top: 47%;
+  width: 100%;
+  height: 500px;
+  margin-top: -250px;
+  z-index: 30;
+  opacity: 0;
+  pointer-events: none;
+}
+
+#cutin-backdrop {
+  position: absolute;
+  inset: 16px 0;
+  background: linear-gradient(
+    to bottom var(--in-oklab),
+    transparent 0%,
+    rgba(2, 4, 14, 0.78) 24%,
+    rgba(2, 4, 14, 0.92) 50%,
+    rgba(2, 4, 14, 0.78) 76%,
+    transparent 100%
+  );
+}
+
+#cutin-speedlines {
+  position: absolute;
+  inset: 0;
+  mix-blend-mode: screen;
+  background-image: url("../assets/generated/opt_cutin_speedlines.png");
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+}
+
+#cutin-flare {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 100%;
+  height: 360px;
+  margin-top: -180px;
+  mix-blend-mode: screen;
+  background-image: url("../assets/generated/opt_cutin_flare.png");
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+}
+
+#cutin-typo-wrap {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transform: rotate(-2.2deg);
+}
+
+.cutin-main-img {
+  margin: 0;
+  width: 667px;
+  height: 112px;
+  background-image: url("../assets/generated/typo_cutin_main.png");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  filter:
+    drop-shadow(0 4px 10px rgba(0, 0, 0, 0.96))
+    drop-shadow(0 10px 28px rgba(0, 0, 0, 0.92));
+}
+
+#cutin-glint {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 96px;
+  height: 240px;
+  margin-left: -48px;
+  margin-top: -120px;
+  transform: skewX(-24deg);
+  mix-blend-mode: screen;
+  opacity: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg var(--in-oklch),
+    transparent 0%,
+    rgba(118, 212, 238, 0.42) 26%,
+    rgba(255, 254, 248, 0.96) 46%,
+    rgba(242, 213, 143, 0.72) 56%,
+    rgba(232, 141, 180, 0.36) 74%,
+    transparent 100%
+  );
+}
+
+/* 冒頭導入：左から右斜め下へ駆け抜ける流れ星 */
+#intro-shooting-star {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 26;
+}
+
+.intro-meteor-head,
+.intro-meteor-streak,
+.intro-meteor-node,
+.intro-meteor-dust {
+  position: absolute;
+  left: 0;
+  top: 0;
+  opacity: 0;
+  mix-blend-mode: screen;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  transform-origin: 50% 50%;
+}
+
+.intro-meteor-head {
+  background-image: url("../assets/generated/opt_wisp_head_blue.png");
+}
+
+.intro-meteor-streak {
+  background-image: url("../assets/generated/opt_cutin_flare.png");
+  background-size: 100% 100%;
+}
+
+.intro-meteor-node {
+  background-image: url("../assets/generated/opt_meteor_blue.png");
+}
+
+/* =========================================================================
+ * Phase 5: Landscape (1920x1080 / 16:9) 空間バランス調整
+ * ========================================================================= */
+html[data-orientation="landscape"] #light-pillar,
+html[data-orientation="landscape"] #light-pillar-rainbow {
+  top: 36px;
+  width: 460px;
+  height: 940px;
+  margin-left: -230px;
+}
+
+html[data-orientation="landscape"] #celestial-gate-wrap {
+  top: 6%;
+  width: 880px;
+  height: 880px;
+  margin-left: -440px;
+  margin-top: -440px;
+}
+
+html[data-orientation="landscape"] #magic-circle-wrap {
+  top: 56%;
+  width: 900px;
+  height: 900px;
+  margin-left: -450px;
+  margin-top: -450px;
+}
+
+html[data-orientation="landscape"] .sky-bolt {
+  top: 28px;
+}
+
+html[data-orientation="landscape"] #bolt-gold {
+  width: 320px;
+  height: 540px;
+  margin-left: -160px;
+}
+
+html[data-orientation="landscape"] #bolt-prism {
+  width: 420px;
+  height: 540px;
+  margin-left: -210px;
+}
+
+html[data-orientation="landscape"] #orb-wrap {
+  width: 360px;
+  height: 360px;
+  margin-left: -180px;
+  margin-top: -180px;
+}
+
+html[data-orientation="landscape"] #orb-cracks {
+  inset: -18px;
+  width: 396px;
+  height: 396px;
+}
+
+html[data-orientation="landscape"] #summon-top-hud {
+  top: 54px;
+}
+
+html[data-orientation="landscape"] #cutin-band {
+  height: 420px;
+  margin-top: -210px;
+}

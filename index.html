@@ -1,0 +1,245 @@
+<!doctype html>
+<html
+  lang="ja"
+  data-orientation="portrait"
+  data-composition-variables='[
+    {"id":"orientation","type":"string","label":"Orientation (portrait | landscape | auto)","default":""},
+    {"id":"photo","type":"string","label":"Photo Path","default":""},
+    {"id":"title","type":"string","label":"Card Title","default":""},
+    {"id":"subtitle","type":"string","label":"Card Subtitle","default":""},
+    {"id":"rarity","type":"string","label":"Rarity","default":""},
+    {"id":"attributeBadge","type":"string","label":"Attribute Badge (1 char)","default":""},
+    {"id":"attributeLabel","type":"string","label":"Attribute Label","default":""},
+    {"id":"flavor","type":"string","label":"Flavor Text","default":""},
+    {"id":"cardNo","type":"string","label":"Card Number","default":""},
+    {"id":"preset","type":"string","label":"Typography Preset (royal-foil | cute-pastel)","default":""},
+    {"id":"photoFit","type":"string","label":"Photo Fit (cover | contain)","default":""},
+    {"id":"photoPosition","type":"string","label":"Photo Position (CSS object-position)","default":""},
+    {"id":"photoZoom","type":"string","label":"Photo Zoom (number)","default":""},
+    {"id":"resultRingMode","type":"string","label":"Result Ring Mode (rainbow | cooldown | gold)","default":""}
+  ]'
+>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=720, height=1280" />
+    <title>SSRGenerate-Lite — 16s SSR Gacha Reveal (720p/24fps)</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js"></script>
+    <style>
+      :root {
+        --in-oklab: ;
+        --bg-edge-black: #000000;
+        --canvas-w: 1080px;
+        --canvas-h: 1920px;
+        --output-w: 720px;
+        --output-h: 1280px;
+        --lite-scale: calc(2 / 3);
+      }
+
+      html[data-orientation="landscape"] {
+        --canvas-w: 1920px;
+        --canvas-h: 1080px;
+        --output-w: 1280px;
+        --output-h: 720px;
+      }
+
+      @supports (background: linear-gradient(in oklab, white, black)) {
+        :root {
+          --in-oklab: in oklab;
+        }
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        width: var(--output-w);
+        height: var(--output-h);
+        overflow: hidden;
+        background: var(--bg-edge-black);
+        -webkit-font-smoothing: antialiased;
+      }
+
+      #root {
+        position: relative;
+        width: var(--output-w);
+        height: var(--output-h);
+        overflow: hidden;
+        background: var(--bg-edge-black);
+        isolation: isolate;
+      }
+
+      .clip {
+        position: absolute;
+        inset: 0;
+        width: var(--output-w);
+        height: var(--output-h);
+        overflow: hidden;
+        pointer-events: none;
+      }
+
+      #preroll-bg {
+        z-index: 5;
+        opacity: 0;
+        background: radial-gradient(circle at 50% 47% var(--in-oklab), #101b3f 0%, #060a1b 58%, #020309 100%);
+      }
+
+      #comp-summon {
+        z-index: 10;
+      }
+
+      #comp-result {
+        z-index: 20;
+      }
+
+      #flash-layer {
+        z-index: 60;
+        background: #ffffff;
+        opacity: 0;
+      }
+
+      #edge-fade-out {
+        z-index: 70;
+        background: #000000;
+        opacity: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="main"
+      data-start="0"
+      data-duration="16"
+      data-width="720"
+      data-height="1280"
+      data-fps="24"
+    >
+      <!-- =====================================================
+           Audio Tracks (0.5s silent preroll + 15.0s main + 0.5s silent tail)
+           ===================================================== -->
+      <audio
+        id="audio-summon"
+        src="assets/se_summon.wav"
+        data-start="0.5"
+        data-duration="3.5"
+        data-volume="0.85"
+        data-track-index="10"
+      ></audio>
+      <audio
+        id="audio-upgrade"
+        src="assets/se_upgrade.wav"
+        data-start="3.0"
+        data-duration="4.8"
+        data-volume="0.92"
+        data-track-index="11"
+      ></audio>
+      <audio
+        id="audio-fanfare"
+        src="assets/se_fanfare.wav"
+        data-start="7.3"
+        data-duration="8.0"
+        data-volume="0.95"
+        data-track-index="12"
+      ></audio>
+
+      <!-- =====================================================
+           Preroll Fade-In Background (0.0s - 0.55s)
+           ===================================================== -->
+      <div id="preroll-bg" class="clip" data-start="0" data-duration="0.55" data-track-index="3"></div>
+
+      <!-- =====================================================
+           Sub-Composition 1: Summon Circle, Orb & Fake Upgrade (0.5s - 7.9s)
+           ===================================================== -->
+      <div
+        id="comp-summon"
+        class="clip"
+        data-composition-id="scene-summon"
+        data-composition-src="compositions/scene-summon.html"
+        data-start="0.5"
+        data-duration="7.4"
+        data-track-index="0"
+      ></div>
+
+      <!-- =====================================================
+           Sub-Composition 2: 3D SSR Card Reveal & Static Result (7.4s - 16.0s)
+           ===================================================== -->
+      <div
+        id="comp-result"
+        class="clip"
+        data-composition-id="scene-result"
+        data-composition-src="compositions/scene-result.html"
+        data-start="7.4"
+        data-duration="8.6"
+        data-track-index="1"
+      ></div>
+
+      <!-- =====================================================
+           Whiteout Flash Transition Layer (7.1s - 8.2s)
+           ===================================================== -->
+      <div id="flash-layer" class="clip" data-start="7.1" data-duration="1.1" data-track-index="2"></div>
+
+      <!-- =====================================================
+           Tail Fade-Out Layer (15.45s - 16.0s)
+           ===================================================== -->
+      <div id="edge-fade-out" class="clip" data-start="15.45" data-duration="0.55" data-track-index="4"></div>
+    </div>
+
+    <script>
+      (function () {
+        // Forward top-level CLI variables to scene-result sub-composition if provided
+        const hfVars =
+          window.__hyperframes && typeof window.__hyperframes.getVariables === "function"
+            ? window.__hyperframes.getVariables()
+            : {};
+        const hasOverride = Object.keys(hfVars).some(function (k) {
+          const v = hfVars[k];
+          if (typeof v === "string") return v.trim() !== "";
+          if (typeof v === "number") return Number.isFinite(v);
+          if (typeof v === "boolean") return true;
+          return v !== null && v !== undefined;
+        });
+        if (hasOverride) {
+          const resComp = document.getElementById("comp-result");
+          if (resComp) {
+            resComp.setAttribute("data-variable-values", JSON.stringify(hfVars));
+          }
+        }
+
+        const tl = gsap.timeline({ paused: true });
+
+        // Preroll fade-in from pure black to deep void (0.0s - 0.5s)
+        tl.fromTo("#preroll-bg", { opacity: 0 }, { opacity: 1, duration: 0.5, ease: "power2.out" }, 0);
+
+        tl.set("#flash-layer", { opacity: 0 }, 7.1);
+        // Critical whiteout transition: sharp expo.in -> 3-frame pure white hold (7.48-7.58s) -> sharp expo.out reveal
+        tl.fromTo(
+          "#flash-layer",
+          { opacity: 0 },
+          { opacity: 1, duration: 0.24, ease: "expo.in", immediateRender: false },
+          7.24
+        );
+        tl.to("#flash-layer", { opacity: 0, duration: 0.22, ease: "expo.out" }, 7.58);
+
+        // Tail fade-out to pure black (15.5s - 16.0s)
+        tl.set("#edge-fade-out", { opacity: 0 }, 15.45);
+        tl.fromTo(
+          "#edge-fade-out",
+          { opacity: 0 },
+          { opacity: 1, duration: 0.5, ease: "power2.inOut", immediateRender: false },
+          15.5
+        );
+
+        // Anchor 16.0s total duration
+        tl.set("#root", {}, 16.0);
+
+        window.__timelines = window.__timelines || {};
+        window.__timelines["main"] = tl;
+        tl.seek(0);
+      })();
+    </script>
+  </body>
+</html>

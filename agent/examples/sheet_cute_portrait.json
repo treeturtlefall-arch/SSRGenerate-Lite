@@ -1,0 +1,22 @@
+{
+  "photo": "assets/photo.jpg",
+  "title": "えがおの天使",
+  "orientation": "portrait",
+  "subtitle": "「満開の笑顔」",
+  "flavor": "",
+  "rarity": "SSR",
+  "stars": 0,
+  "attributeBadge": "愛",
+  "attributeLabel": "ANGEL",
+  "cardNo": "NO.120-SSR",
+  "typography": {
+    "preset": "cute-pastel"
+  },
+  "photoFit": "cover",
+  "photoPosition": "50% 35%",
+  "photoZoom": 1.05,
+  "resultRingMode": "rainbow",
+  "seed": 20261120,
+  "mode": "sheet",
+  "agentNotes": "縦モード・かわいい系（cute-pastel）の標準記入シート例。"
+}

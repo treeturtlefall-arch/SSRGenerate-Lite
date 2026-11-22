@@ -1,0 +1,323 @@
+<!doctype html>
+<html
+  lang="ja"
+  data-orientation="portrait"
+  data-composition-variables='[
+    {"id":"orientation","type":"string","label":"Orientation (portrait | landscape | auto)","default":""},
+    {"id":"photo","type":"string","label":"Photo Path","default":""},
+    {"id":"title","type":"string","label":"Card Title","default":""},
+    {"id":"subtitle","type":"string","label":"Card Subtitle","default":""},
+    {"id":"rarity","type":"string","label":"Rarity","default":""},
+    {"id":"attributeBadge","type":"string","label":"Attribute Badge (1 char)","default":""},
+    {"id":"attributeLabel","type":"string","label":"Attribute Label","default":""},
+    {"id":"flavor","type":"string","label":"Flavor Text","default":""},
+    {"id":"cardNo","type":"string","label":"Card Number","default":""},
+    {"id":"preset","type":"string","label":"Typography Preset (royal-foil | cute-pastel)","default":""},
+    {"id":"photoFit","type":"string","label":"Photo Fit (cover | contain)","default":""},
+    {"id":"photoPosition","type":"string","label":"Photo Position (CSS object-position)","default":""},
+    {"id":"photoZoom","type":"string","label":"Photo Zoom (number)","default":""},
+    {"id":"resultRingMode","type":"string","label":"Result Ring Mode (rainbow | cooldown | gold)","default":""}
+  ]'
+>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=720, height=1280" />
+    <title>SSRGenerate-Lite — Scene 3-5: 3D SSR Card &amp; Luminous Breathing Result</title>
+    <link rel="stylesheet" href="./scene-result.css" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js"></script>
+    <script src="../card-config.js"></script>
+    <script src="../assets/generated/typo-manifest.js"></script>
+    <script src="./shared-utils.js"></script>
+  </head>
+  <body>
+    <div
+      id="result-root"
+      class="scene-root"
+      data-composition-id="scene-result"
+      data-start="0"
+      data-duration="8.6"
+      data-width="720"
+      data-height="1280"
+      data-fps="24"
+    >
+      <div id="scene-result-stage" class="clip" data-start="0" data-duration="8.6" data-track-index="0" data-layout-allow-overflow>
+        <div id="result-rays-a" class="result-rays-layer" data-layout-allow-overflow></div>
+        <div id="result-rays-b" class="result-rays-layer" data-layout-allow-overflow></div>
+        <div id="result-halo" data-layout-allow-overflow></div>
+        <div id="result-halo-blue" data-layout-allow-overflow></div>
+        <div id="result-bg-ring" data-layout-allow-overflow>
+          <div id="result-ring-rainbow" class="result-ring-layer" data-layout-allow-overflow></div>
+          <div id="result-ring-gold" class="result-ring-layer" data-layout-allow-overflow></div>
+          <div id="result-ring-blue" class="result-ring-layer" data-layout-allow-overflow></div>
+        </div>
+        <div id="result-grain" class="film-grain-overlay" data-layout-allow-overflow></div>
+        <div id="bokeh-back-layer" data-layout-allow-overflow></div>
+        <div id="landing-shockwave" data-layout-allow-overflow></div>
+
+        <div id="card-stage">
+          <div id="ssr-card">
+            <div id="card-back-face" class="card-face card-back">
+              <img class="card-back-art" src="../assets/generated/mat_card_back.png" alt="" />
+              <div id="spin-spec-back" data-layout-allow-overflow></div>
+              <div id="card-back-emblem-glow" data-layout-allow-overflow data-layout-ignore></div>
+              <div class="card-back-frame"></div>
+              <div id="card-back-rim-burst" data-layout-allow-overflow data-layout-ignore></div>
+            </div>
+
+            <div class="card-edge-slice card-edge-s1" data-layout-ignore></div>
+            <div class="card-edge-slice card-edge-s2" data-layout-ignore></div>
+            <div class="card-edge-slice card-edge-s3" data-layout-ignore></div>
+            <div class="card-edge-slice card-edge-s4" data-layout-ignore></div>
+            <div class="card-edge-slice card-edge-s5" data-layout-ignore></div>
+
+            <div class="card-face card-front">
+              <img id="mat-rainbow-frame" src="../assets/generated/mat_rainbow_frame.png" alt="" />
+              <div id="frame-holo-glint"></div>
+              <div id="frame-rim-glare" data-layout-allow-overflow data-layout-ignore></div>
+              <div id="spin-spec-front-clip">
+                <div id="spin-spec-front" data-layout-allow-overflow></div>
+              </div>
+
+              <div class="card-front-inner">
+                <div class="card-photo-area">
+                  <img id="card-photo" src="../assets/photo.jpg" alt="SSR Character Photo" data-layout-allow-overflow />
+                  <div class="photo-vignette"></div>
+                </div>
+                <img id="mat-window-depth" src="../assets/generated/mat_window_depth.png" alt="" />
+                <div id="holo-mask-zone">
+                  <div id="holo-sweep-1" data-layout-allow-overflow></div>
+                  <div id="holo-sweep-2" data-layout-allow-overflow></div>
+                  <div id="holo-static-sheen"></div>
+                </div>
+                <div id="ssr-emblem">
+                  <div id="ssr-emblem-img" role="img" aria-label="SSR"></div>
+                  <div id="ssr-emblem-text" data-layout-allow-safe-zone>SSR</div>
+                </div>
+                <div id="attr-badge">
+                  <div id="attr-badge-img" role="img" aria-label="Attribute"></div>
+                  <div id="attr-badge-text" data-layout-allow-safe-zone></div>
+                </div>
+                <div id="card-overlay-layer">
+                  <div id="stars-row"></div>
+                  <div id="royal-rule-wrap" class="typo-slot" data-layout-ignore>
+                    <div id="royal-rule-img" class="typo-img"></div>
+                  </div>
+                  <div id="card-subtitle-wrap" class="typo-slot">
+                    <div id="card-subtitle-img" class="typo-img"></div>
+                    <div id="card-subtitle" data-layout-allow-safe-zone>【覚醒の眼光】</div>
+                  </div>
+                  <div id="card-title-wrap" class="typo-slot">
+                    <div id="card-title-img" class="typo-img"></div>
+                    <div id="card-title" data-layout-allow-safe-zone>ちいさな覇王</div>
+                    <div id="title-wipe-glint" data-layout-allow-overflow data-layout-ignore></div>
+                  </div>
+                  <div id="card-flavor-wrap" class="typo-slot">
+                    <div id="card-flavor-img" class="typo-img"></div>
+                    <div id="card-flavor" data-layout-allow-safe-zone></div>
+                  </div>
+                </div>
+                <div id="card-no-corner">
+                  <div id="card-no-img"></div>
+                  <div id="card-no-text" data-layout-allow-safe-zone>NO.077-SSR</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div id="celebration-layer" data-layout-allow-overflow></div>
+      </div>
+    </div>
+
+    <script src="./scene-result-setup.js"></script>
+    <script>
+      (function () {
+        const st = window.SSR_RESULT_STATE;
+        const at = st.at;
+        const cfg = st.cfg;
+        const chromaShockPx = st.chromaShockPx;
+        const starEls = st.starEls;
+        const starFlareEls = st.starFlareEls;
+        const sparkleData = st.sparkleData;
+        const flakeData = st.flakeData;
+        const bokehData = st.bokehData;
+
+        const tl = gsap.timeline({ paused: true });
+
+        tl.set("#scene-result-stage", { filter: "none", opacity: 0 }, 0);
+        tl.set("#card-stage", { scale: 1, y: 0 }, 0);
+        tl.set(".card-edge-slice", { opacity: 1 }, 0);
+        tl.set("#card-back-emblem-glow, #card-back-rim-burst", { opacity: 0 }, 0);
+        tl.to("#scene-result-stage", { opacity: 1, duration: 0.04 }, at(7.02));
+        tl.fromTo("#result-rays-a", { rotation: 0, opacity: 0.22 }, { rotation: 38, opacity: 0.56, duration: 4.85, ease: "power2.out" }, at(7.10));
+        tl.fromTo("#result-rays-b", { rotation: 12, opacity: 0.16 }, { rotation: -24, opacity: 0.44, duration: 4.85, ease: "power2.out" }, at(7.10));
+        tl.fromTo("#result-bg-ring", { rotation: -38, scale: 0.86, opacity: 0 }, { rotation: 0, scale: 1.0, opacity: 0.56, duration: 4.85, ease: "power2.out" }, at(7.10));
+        if (st.resultRingMode === "rainbow") {
+          tl.set("#result-ring-rainbow", { opacity: 1 }, 0);
+          tl.set("#result-ring-gold, #result-ring-blue, #result-halo-blue", { opacity: 0 }, 0);
+        } else if (st.resultRingMode === "gold") {
+          tl.set("#result-ring-gold", { opacity: 1 }, 0);
+          tl.set("#result-ring-rainbow, #result-ring-blue, #result-halo-blue", { opacity: 0 }, 0);
+        } else {
+          // 案B-2 ("cooldown"): 虹 (7.10s..9.30s) -> 赤金 (9.30s..10.80s) -> 青系へ鎮静 (10.80s..13.50s / 全体14.00sで完全青定着)
+          tl.set("#result-ring-rainbow", { opacity: 1 }, 0);
+          tl.set("#result-ring-gold, #result-ring-blue, #result-halo-blue", { opacity: 0 }, 0);
+          tl.to("#result-ring-rainbow", { opacity: 0, duration: 1.50, ease: "sine.inOut" }, at(9.30));
+          tl.to("#result-ring-gold", { opacity: 1, duration: 1.50, ease: "sine.inOut" }, at(9.30));
+          tl.to("#result-ring-gold", { opacity: 0, duration: 2.70, ease: "sine.inOut" }, at(10.80));
+          tl.to("#result-ring-blue", { opacity: 1, duration: 2.70, ease: "sine.inOut" }, at(10.80));
+          tl.to("#result-halo", { opacity: 0.25, duration: 2.70, ease: "sine.inOut" }, at(10.80));
+          tl.to("#result-halo-blue", { opacity: 0.85, duration: 2.70, ease: "sine.inOut" }, at(10.80));
+        }
+        tl.fromTo("#card-stage", { opacity: 0 }, { opacity: 1, duration: 0.18, ease: "power2.out" }, at(7.10));
+
+        // 3D Card Spin & Landing (7.12s -> 8.88s, hard stop at 8.68s)
+        // Stage 1: 飛び出し高速1回転 -> 裏面(-195deg)へタメ到達 (7.12s -> 7.92s)
+        tl.fromTo(
+          "#ssr-card",
+          { scale: 0.16, y: 130, z: -620, rotationY: -720, rotationX: 18, rotationZ: -9 },
+          { scale: 0.90, y: -20, z: -90, rotationY: -195, rotationX: 4, rotationZ: -2, duration: 0.80, ease: "power2.out" },
+          at(7.12)
+        );
+        // Stage 2: 裏面を見せつつ加速反転 -> 正面直前(-12deg)へ突入 (7.92s -> 8.66s)
+        tl.to(
+          "#ssr-card",
+          { scale: 1.07, y: -14, z: 24, rotationY: -12, rotationX: 0, rotationZ: 0, duration: 0.74, ease: "power2.in" },
+          at(7.92)
+        );
+        // Stage 3: 正面ビタ止め＆衝撃吸収 (8.66s -> 8.88s)
+        tl.to(
+          "#ssr-card",
+          { scale: 1.0, y: 0, z: 0, rotationY: 0, duration: 0.22, ease: "back.out(2.6)" },
+          at(8.66)
+        );
+
+        // Spin Specular Highlights & Back Charge Anticipation (Back: 7.74s..8.40s, Front: 8.48s..8.98s)
+        tl.fromTo("#spin-spec-back", { x: -120, opacity: 0 }, { x: st.spinSpecBackEndX || 1420, opacity: 0.90, duration: 0.42, ease: "sine.inOut" }, at(7.74));
+        tl.to("#spin-spec-back", { opacity: 0, duration: 0.12 }, at(8.06));
+        tl.fromTo("#card-back-emblem-glow", { opacity: 0, scale: 0.52, rotation: -12 }, { opacity: 0.96, scale: 1.24, rotation: 16, duration: 0.26, ease: "power2.in", immediateRender: false }, at(7.96));
+        tl.to("#card-back-emblem-glow", { opacity: 0, scale: 1.56, rotation: 34, duration: 0.18, ease: "power2.out" }, at(8.22));
+        tl.fromTo("#card-back-rim-burst", { opacity: 0 }, { opacity: 0.88, duration: 0.20, ease: "power2.in", immediateRender: false }, at(8.02));
+        tl.to("#card-back-rim-burst", { opacity: 0, duration: 0.16, ease: "power2.out" }, at(8.24));
+        tl.fromTo("#spin-spec-front", { x: -160, opacity: 0 }, { x: st.spinSpecFrontEndX || 1460, opacity: 0.88, duration: 0.50, ease: "power2.out" }, at(8.48));
+        tl.to("#spin-spec-front", { opacity: 0, duration: 0.14, ease: "power1.in" }, at(8.84));
+        tl.to(".card-edge-slice", { opacity: 0, duration: 0.06, ease: "power1.out" }, at(8.82));
+
+        // Landing Shockwave & Damped Zoom Punch (8.68s..)
+        tl.fromTo("#landing-shockwave", { opacity: 0.95, scale: 0.55 }, { opacity: 0, scale: 3.6, duration: 0.78, ease: "expo.out", immediateRender: false }, at(8.68));
+        tl.to("#card-stage", { scale: 1.036, y: 6, duration: 0.04, ease: "power2.out" }, at(8.68));
+        tl.to("#card-stage", { scale: 1.0, y: 0, duration: 0.24, ease: "expo.out" }, at(8.72));
+
+        // Center-Attenuated Prism Holo Sweeps & Frame Rim Shimmer
+        const holoEndX = st.holoSweepEndX || 1850;
+        tl.fromTo("#holo-sweep-1", { x: 0 }, { x: holoEndX, duration: 1.10, ease: "power2.inOut" }, at(8.92));
+        tl.fromTo("#holo-sweep-1", { opacity: 0 }, { opacity: 0.76, duration: 0.25, ease: "power1.out" }, at(8.92));
+        tl.to("#holo-sweep-1", { opacity: 0, duration: 0.26, ease: "power1.in" }, at(9.76));
+
+        tl.fromTo("#holo-sweep-2", { x: 0 }, { x: holoEndX, duration: 1.10, ease: "power2.inOut" }, at(10.45));
+        tl.fromTo("#holo-sweep-2", { opacity: 0 }, { opacity: 0.60, duration: 0.25, ease: "power1.out" }, at(10.45));
+        tl.to("#holo-sweep-2", { opacity: 0, duration: 0.25, ease: "power1.in" }, at(11.30));
+
+        tl.fromTo("#holo-static-sheen", { opacity: 0 }, { opacity: 0.72, duration: 0.85, ease: "power2.out" }, at(11.00));
+        tl.fromTo("#frame-holo-glint", { opacity: 0, backgroundPosition: "0% 0%, 0 0" }, { opacity: 0.78, backgroundPosition: "60% 60%, 0 0", duration: 2.00, ease: "power2.out" }, at(9.90));
+
+        // Crest, Attribute Plate, Stars, Royal Rule & Foil Typography Light-Wipe Stamping
+        tl.fromTo("#ssr-emblem", { opacity: 0, scale: 2.05, rotation: -10 }, { opacity: 1, scale: 1.0, rotation: 0, duration: 0.44, ease: "back.out(2.1)" }, at(8.76));
+        if (cfg.attribute) {
+          tl.fromTo("#attr-badge", { opacity: 0, x: 34, scale: 0.92 }, { opacity: 1, x: 0, scale: 1.0, duration: 0.40, ease: "back.out(1.6)" }, at(8.98));
+        }
+        starEls.forEach(function (star, idx) {
+          const tStar = at(9.00 + idx * 0.14);
+          tl.fromTo(star, { opacity: 0, scale: 0.1, rotation: -45 }, { opacity: 1, scale: 1.0, rotation: 0, duration: 0.36, ease: "back.out(2.4)" }, tStar);
+          const flare = starFlareEls[idx];
+          if (flare) {
+            tl.fromTo(flare, { opacity: 0, scale: 0.25 }, { opacity: 0.96, scale: 1.45, duration: 0.09, ease: "power2.out" }, tStar);
+            tl.to(flare, { opacity: 0, scale: 0.55, duration: 0.18, ease: "power2.in" }, +(tStar + 0.09).toFixed(4));
+          }
+        });
+        function addLightWipe(wrapSel, contentSel, startSec, xOffset, wipeDur, padY, padX, rightOut) {
+          const t = at(startSec);
+          tl.fromTo(wrapSel, { opacity: 0, x: xOffset }, { opacity: 1, x: 0, duration: 0.18, ease: "power2.out" }, t);
+          tl.fromTo(
+            contentSel,
+            { clipPath: "inset(" + -padY + "px 100% " + -padY + "px " + -padX + "px)" },
+            { clipPath: "inset(" + -padY + "px " + rightOut + "% " + -padY + "px " + -padX + "px)", duration: wipeDur, ease: "power2.inOut" },
+            t
+          );
+        }
+
+        if (st.hasRoyalRule) {
+          tl.fromTo("#royal-rule-wrap", { opacity: 0, scaleX: 0 }, { opacity: 1, scaleX: 1, duration: 0.42, ease: "power3.out" }, at(9.26));
+        }
+        addLightWipe("#card-subtitle-wrap", "#card-subtitle-img, #card-subtitle", 9.38, -14, 0.38, 28, 28, -6);
+
+        const wipeHalf = st.titleWipeHalf || 235;
+        tl.fromTo("#card-title-wrap", { opacity: 0, scale: 1.07 }, { opacity: 1, scale: 1.0, duration: 0.46, ease: "back.out(1.6)" }, at(9.60));
+        tl.fromTo("#card-title-img, #card-title", { clipPath: "inset(-28px 100% -28px -28px)" }, { clipPath: "inset(-28px -6% -28px -28px)", duration: 0.42, ease: "power2.inOut" }, at(9.60));
+        tl.fromTo("#title-wipe-glint", { x: -wipeHalf, opacity: 0 }, { x: wipeHalf, duration: 0.42, ease: "power2.inOut" }, at(9.60));
+        tl.to("#title-wipe-glint", { opacity: 1, duration: 0.08, ease: "power2.out" }, at(9.60));
+        tl.to("#title-wipe-glint", { opacity: 0, duration: 0.12, ease: "power2.in" }, at(9.92));
+
+        if (cfg.flavor) {
+          addLightWipe("#card-flavor-wrap", "#card-flavor-img, #card-flavor", 9.96, -14, 0.44, 28, 28, -6);
+        }
+        addLightWipe("#card-no-corner", "#card-no-img, #card-no-text", 10.30, -10, 0.34, 10, 10, -4);
+
+        // Clustered Sparkles, 3D Foil Flakes & Bokeh Orbs
+        sparkleData.forEach(function (sp) {
+          tl.fromTo(
+            sp.el,
+            { x: sp.endX * 0.35, y: sp.endY * 0.35, opacity: 0, scale: 0.1, rotation: sp.rot - 75 },
+            { x: sp.endX, y: sp.endY, opacity: sp.baseAlpha, scale: sp.finalScale, rotation: sp.rot, duration: 1.25, ease: "power3.out" },
+            sp.startAt
+          );
+        });
+        flakeData.forEach(function (fl) {
+          tl.fromTo(
+            fl.el,
+            { x: fl.startX, y: fl.startY, opacity: 0, scale: 0.3, rotationX: 0, rotationY: 0, rotationZ: 0 },
+            { x: fl.midX, y: fl.midY, opacity: 0.96, scale: 1.0, rotationX: fl.rotX * 0.52, rotationY: fl.rotY * 0.52, rotationZ: fl.rotZ * 0.52, duration: 0.88, ease: "power3.out" },
+            fl.startAt
+          );
+          tl.to(
+            fl.el,
+            { x: fl.endX, y: fl.endY, opacity: 0, scale: 0.65, rotationX: fl.rotX, rotationY: fl.rotY, rotationZ: fl.rotZ, duration: 1.25, ease: "power1.in" },
+            fl.startAt + 0.88
+          );
+        });
+        bokehData.forEach(function (bk) {
+          tl.fromTo(bk.el, { x: bk.startX, y: bk.startY, opacity: 0, scale: 0.65 }, { x: bk.endX, y: bk.endY, opacity: bk.peakAlpha, scale: 1.0, duration: 1.45, ease: "power2.out" }, bk.startAt);
+          tl.to(bk.el, { opacity: bk.holdAlpha, duration: 0.65, ease: "sine.inOut" }, bk.startAt + 1.45);
+        });
+
+        // 12.0s - 15.0s: Layout Fixed, Luminous Breathing Only
+        tl.to("#frame-holo-glint", { backgroundPosition: "160% 160%, 0 0", opacity: 0.92, duration: 1.5, ease: "sine.inOut", yoyo: true, repeat: 1 }, at(12.0));
+        tl.fromTo("#frame-rim-glare", { backgroundPosition: "0% 0%", opacity: 0 }, { backgroundPosition: "100% 100%", duration: 0.90, ease: "power2.inOut" }, at(12.95));
+        tl.to("#frame-rim-glare", { opacity: 0.96, duration: 0.16, ease: "power2.out" }, at(12.95));
+        tl.to("#frame-rim-glare", { opacity: 0, duration: 0.22, ease: "power2.in" }, at(13.63));
+        tl.to("#holo-static-sheen", { opacity: 0.96, duration: 1.5, ease: "sine.inOut", yoyo: true, repeat: 1 }, at(12.0));
+        if (st.resultRingMode !== "cooldown") {
+          tl.to("#result-halo", { opacity: 0.76, duration: 1.5, ease: "sine.inOut", yoyo: true, repeat: 1 }, at(12.0));
+        } else {
+          tl.to("#result-halo-blue", { opacity: 0.96, duration: 0.75, ease: "sine.inOut", yoyo: true, repeat: 1 }, at(13.50));
+        }
+        tl.to("#result-rays-a", { opacity: 0.42, duration: 1.5, ease: "sine.inOut", yoyo: true, repeat: 1 }, at(12.0));
+        tl.to("#result-rays-b", { opacity: 0.62, duration: 1.5, ease: "sine.inOut", yoyo: true, repeat: 1 }, at(12.0));
+        tl.to("#result-bg-ring", { opacity: 0.72, duration: 1.5, ease: "sine.inOut", yoyo: true, repeat: 1 }, at(12.0));
+        [0, 1, 2, 3].forEach(function (g) {
+          tl.to(".sp-group-" + g, { opacity: 0.42, duration: 0.65, ease: "sine.inOut", yoyo: true, repeat: 3 }, at(12.0 + g * 0.22));
+        });
+        [0, 1, 2].forEach(function (g) {
+          tl.to(".bk-group-" + g, { opacity: 0.14, duration: 1.25, ease: "sine.inOut", yoyo: true, repeat: 1 }, at(12.0 + g * 0.25));
+        });
+
+        st.addChromaShock(tl, "#scene-result-stage", at(8.68), chromaShockPx * 0.95);
+
+        tl.set("#result-root", {}, 8.6);
+
+        window.__timelines = window.__timelines || {};
+        window.__timelines["scene-result"] = tl;
+        tl.seek(0);
+      })();
+    </script>
+  </body>
+</html>

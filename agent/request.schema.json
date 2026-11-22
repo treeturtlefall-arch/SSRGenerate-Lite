@@ -1,0 +1,118 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/treeturtlefall-arch/SSRGenerate-Lite/agent/request.schema.json",
+  "title": "SSRGenerate-Lite Agent Request Schema",
+  "description": "AI エージェントが解釈・検証・生成・再レンダリングに使用する SSR ガチャ演出依頼シートの正本スキーマ（本家 SSRGenerate とも互換）。",
+  "type": "object",
+  "required": ["photo", "title", "mode"],
+  "additionalProperties": false,
+  "properties": {
+    "photo": {
+      "type": "string",
+      "minLength": 1,
+      "description": "入力写真のパス（絶対パスまたはリポジトリ相対パス）。エージェントが assets/ へ変換・配置する。"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "description": "カードのメインタイトル（長文は本家オートレイアウトで自動縮小）。"
+    },
+    "orientation": {
+      "type": "string",
+      "enum": ["auto", "portrait", "landscape"],
+      "default": "auto",
+      "description": "動画とカードの向き。エージェント層の既定は auto（写真の縦横比から判定）。portrait=720x1280, landscape=1280x720。"
+    },
+    "subtitle": {
+      "type": "string",
+      "default": "",
+      "description": "タイトル上の二つ名・サブタイトル（例: 「満開の笑顔」）。"
+    },
+    "flavor": {
+      "type": "string",
+      "default": "",
+      "description": "タイトル下のフレーバーテキスト（既定は空＝非表示）。"
+    },
+    "rarity": {
+      "type": "string",
+      "default": "SSR",
+      "description": "左上レアリティ表記（既定: SSR）。"
+    },
+    "stars": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 5,
+      "default": 0,
+      "description": "星の数（0〜5、0 で非表示）。"
+    },
+    "attributeBadge": {
+      "type": "string",
+      "default": "",
+      "description": "右上属性メダリオン内の 1 文字（例: 愛, 光）。空文字で素アイコン表示。"
+    },
+    "attributeLabel": {
+      "type": "string",
+      "default": "",
+      "description": "右上属性ラベル帯の文字列（目安: 英字 3〜8 文字 / 日本語 2〜5 文字。例: ANGEL, LIGHT）。"
+    },
+    "cardNo": {
+      "type": "string",
+      "default": "",
+      "description": "右下シリアル番号表記（例: NO.777-SSR）。省略時は NO.{seedの下3桁}-SSR で採番。"
+    },
+    "typography": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "preset": {
+          "type": "string",
+          "enum": ["royal-foil", "cute-pastel"],
+          "default": "cute-pastel",
+          "description": "タイポグラフィ 2 大プリセット（かっこいい系: royal-foil / かわいい系: cute-pastel）。"
+        }
+      },
+      "default": {
+        "preset": "cute-pastel"
+      }
+    },
+    "photoFit": {
+      "type": "string",
+      "enum": ["cover", "contain"],
+      "default": "cover",
+      "description": "写真のフィット方式（既定: cover）。"
+    },
+    "photoPosition": {
+      "type": "string",
+      "default": "50% 35%",
+      "description": "CSS object-position 形式の表示位置（既定: 50% 35%）。"
+    },
+    "photoZoom": {
+      "type": "number",
+      "minimum": 0.25,
+      "maximum": 3.0,
+      "default": 1.05,
+      "description": "写真の拡大倍率（既定: 1.05）。"
+    },
+    "resultRingMode": {
+      "type": "string",
+      "enum": ["rainbow", "cooldown", "gold"],
+      "default": "rainbow",
+      "description": "リザルト背面魔法陣リングの配色モード（既定: rainbow）。"
+    },
+    "seed": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "決定論的シード値。未指定時は写真ハッシュ＋タイトルから決定論的に採番しシートへ記録する。"
+    },
+    "mode": {
+      "type": "string",
+      "enum": ["sheet", "free", "omakase"],
+      "description": "依頼の受付モード（sheet=記入シート, free=自然文変換, omakase=写真＋二択おまかせ）。"
+    },
+    "agentNotes": {
+      "type": "string",
+      "default": "",
+      "description": "エージェントが補完・判断した項目や理由、auto で確定した向き（portrait/landscape）、警告事項の記録欄。"
+    }
+  }
+}

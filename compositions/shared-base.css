@@ -1,0 +1,140 @@
+@font-face {
+  font-family: "YujiSyuku";
+  src: url("../assets/fonts/YujiSyuku-Regular.ttf") format("truetype");
+  font-display: block;
+}
+@font-face {
+  font-family: "CineCaption";
+  src: url("../assets/fonts/cinecaption.ttf") format("truetype");
+  font-display: block;
+}
+@font-face {
+  font-family: "ShipporiMincho";
+  src: url("../assets/fonts/ShipporiMincho-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-display: block;
+}
+@font-face {
+  font-family: "ShipporiMincho";
+  src: url("../assets/fonts/ShipporiMincho-ExtraBold.ttf") format("truetype");
+  font-weight: 800;
+  font-display: block;
+}
+@font-face {
+  font-family: "Cinzel";
+  src: url("../assets/fonts/Cinzel-VF.ttf") format("truetype");
+  font-weight: 400 900;
+  font-display: block;
+}
+@font-face {
+  font-family: "ZenMaruGothic";
+  src: url("../assets/fonts/ZenMaruGothic-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-display: block;
+}
+@font-face {
+  font-family: "ZenMaruGothic";
+  src: url("../assets/fonts/ZenMaruGothic-Black.ttf") format("truetype");
+  font-weight: 900;
+  font-display: block;
+}
+@font-face {
+  font-family: "Outfit";
+  src: url("../assets/fonts/Outfit-VF.ttf") format("truetype");
+  font-weight: 100 900;
+  font-display: block;
+}
+@font-face {
+  font-family: "JetBrainsMono";
+  src: url("../assets/fonts/JetBrainsMono-VF.ttf") format("truetype");
+  font-weight: 100 800;
+  font-display: block;
+}
+
+:root {
+  --in-oklab: ;
+  --in-oklch: ;
+  --bg-void: #040611;
+  --bg-void-gradient: radial-gradient(circle at 50% 47% var(--in-oklab), #101b3f 0%, #060a1b 58%, #020309 100%);
+  --ink-ivory: #f8f4ea;
+  --ink-gold-light: #f2dfb3;
+  --ink-gold: #d4a24c;
+  --font-jp: "ZenMaruGothic", "Noto Sans JP", sans-serif;
+  --font-display: "YujiSyuku", "Playfair Display", serif;
+  --font-ui: "CineCaption", "Montserrat", "Noto Sans JP", sans-serif;
+  --font-mono: "JetBrainsMono", monospace;
+  /* scripts/_utils.py の LayoutSpec と同期 (内部座標系 1080x1920 -> 出力 720x1280) */
+  --canvas-w: 1080px;
+  --canvas-h: 1920px;
+  --output-w: 720px;
+  --output-h: 1280px;
+  --lite-scale: calc(2 / 3);
+  --card-w: 900px;
+  --card-h: 1590px;
+  --card-border: 20px;
+  --card-outer-r: 40px;
+  --card-inner-r: 24px;
+}
+
+html[data-orientation="landscape"] {
+  --canvas-w: 1920px;
+  --canvas-h: 1080px;
+  --output-w: 1280px;
+  --output-h: 720px;
+  --card-w: 1480px;
+  --card-h: 860px;
+}
+
+@supports (background: linear-gradient(in oklab, white, black)) {
+  :root {
+    --in-oklab: in oklab;
+    --in-oklch: in oklch;
+  }
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: var(--output-w);
+  height: var(--output-h);
+  overflow: hidden;
+  background: transparent;
+  color: var(--ink-ivory);
+  font-family: var(--font-jp);
+  -webkit-font-smoothing: antialiased;
+}
+
+.scene-root {
+  position: relative;
+  width: var(--output-w);
+  height: var(--output-h);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.clip {
+  position: absolute;
+  inset: 0;
+  width: var(--output-w);
+  height: var(--output-h);
+  overflow: hidden;
+  pointer-events: none;
+}
+
+#scene-summon-stage,
+#scene-result-stage {
+  width: var(--canvas-w);
+  height: var(--canvas-h);
+  transform: scale(var(--lite-scale));
+  transform-origin: 0 0;
+}
+
+/* Lite デチューン: 全フレームの mix-blend-mode: overlay 合成負荷を排除 */
+.film-grain-overlay {
+  display: none;
+}

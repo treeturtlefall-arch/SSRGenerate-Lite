@@ -1,0 +1,64 @@
+---
+name: ssr-generate-lite
+description: 写真1枚から16.0秒のSSRガチャ当選演出MP4（縦720x1280 / 横1280x720、24fps）を自律生成・定量QA・納品するスキル。「SSRにして」「ガチャ演出動画を作って」「この写真をSSRカード動画にして」などの依頼で発動する。
+---
+
+# SSRGenerate-Lite エージェント手順書 (`SKILL.md`)
+
+写真 1 枚から **16.0 秒（縦 `720×1280` / 横 `1280×720`、24fps）の SSR ガチャ当選演出 MP4** を生成し、自動定量 QA に合格した MP4 と再現用シート（`request.json`）を納品します。
+
+## 1. 初回確認とセットアップ
+
+作業開始時に `.venv` または `assets/generated/typo-manifest.js` が未生成の場合は、以下を 1 回実行します。
+
+```bash
+bash agent/setup_env.sh
+```
+
+> **Muse VM 注意事項 (§7)**:
+> - Python は必ず `.venv/bin` を `PATH` の先頭に置いて実行します（`ssr_agent.py` 内部では自動的に `.venv`・`.hf_home` (`chmod 700`)・`.tmp` (`TMPDIR`) が適用されます）。
+
+環境・対応プリセットの確認:
+
+```bash
+.venv/bin/python agent/ssr_agent.py capabilities --json
+```
+
+---
+
+## 2. 依頼の受け方（3 モード）
+
+| モード | 人間の入力 | エージェントの動作 |
+|:---|:---|:---|
+| **A. 記入シート (`sheet`)** | JSON または項目指定 | `request.json` として保存し、`ssr_agent.py render --request <path> --json` を実行 |
+| **B. 自然文 (`free`)** | 「この写真で、かわいい感じで、タイトルは○○で」等 | 文中から項目を抽出して `mode: "free"` の `request.json` を作成し、`render` を実行 |
+| **C. おまかせ (`omakase`)** | 写真だけ（＋「かっこいい系 / かわいい系」の二択） | 写真を見て被写体に合う `title`, `subtitle`, `attributeBadge`, `attributeLabel`, `photoPosition` を決め、`render` または `omakase` を実行 |
+
+---
+
+## 3. おまかせモードの判断規則 (§6)
+
+1. **プリセット選択 (`typography.preset`)**:
+   - かっこいい系 → `royal-foil`（しっぽり明朝＋Cinzel、純金箔）
+   - かわいい系 → `cute-pastel`（Zen Maru Gothic＋Outfit、ローズプラムステッカー）
+   - 指定がない場合は写真の被写体・雰囲気から選び、理由を `agentNotes` に 1 行残す。
+2. **向き (`orientation`)**:
+   - 既定は `"auto"`（写真の縦横比から自動判定：縦長・正方形は `portrait` `720×1280`、横長は `landscape` `1280×720`）。
+3. **写真の寄せ位置 (`photoPosition`)**:
+   - 縦モード (`portrait`): 主体が上部 35% 付近に来る `"50% 35%"` を基本に調整。
+   - 横モード (`landscape`): `cute-pastel` はタイトルが右下に寄るため、主体が左〜中央に来るよう左右位置（例: `"45% 42%"`）を調整。
+4. **進め方**:
+   - 事前の細かな確認で止めず、最後までレンダリング＋QA を通して **完成 MP4 と記入済み `request.json` シート** を一緒に提示する。
+
+---
+
+## 4. 実行と納品
+
+```bash
+.venv/bin/python agent/ssr_agent.py render --request request.json --json
+```
+
+出力 JSON の `"deliverable": true`（`"qa.overallPass": true`）を確認してから、以下の 3 点をユーザーへ納品してください。
+1. 生成された MP4 ファイル（`outputMp4`）
+2. 確定した `request.json` の内容（または `requestFile`）
+3. QA 結果の要約（解像度・向き・LUFS・TruePeak・所要時間）

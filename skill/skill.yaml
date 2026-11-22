@@ -1,0 +1,11 @@
+name: ssr-generate-lite
+version: 0.5.0
+description: 写真1枚から16.0秒のSSRガチャ当選演出MP4（縦720x1280 / 横1280x720、24fps）を自律生成・定量QA・納品するスキル
+entrypoint: skill/SKILL.md
+cli: agent/ssr_agent.py
+schema: agent/request.schema.json
+triggers:
+  - SSRにして
+  - SSRガチャ
+  - ガチャ演出
+  - SSRカード動画

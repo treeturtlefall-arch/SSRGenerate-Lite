@@ -1,0 +1,960 @@
+@import "./shared-base.css";
+
+#scene-result-stage {
+  z-index: 20;
+  opacity: 0;
+  background: radial-gradient(circle at 50% 48% var(--in-oklab), #191d46 0%, #090d22 54%, #040611 100%);
+}
+
+#result-grain {
+  z-index: 15;
+}
+
+.result-rays-layer {
+  position: absolute;
+  left: 50%;
+  top: 49%;
+  width: 2100px;
+  height: 2100px;
+  margin-left: -1050px;
+  margin-top: -1050px;
+  opacity: 0;
+  mix-blend-mode: screen;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+#result-rays-a {
+  background-image: url("../assets/generated/opt_godrays_gold_a.png");
+}
+
+#result-rays-b {
+  display: none; /* Lite デチューン: 2100x2100 背面ゴッドレイを 1 枚に統合 */
+}
+
+#result-halo,
+#result-halo-blue {
+  position: absolute;
+  left: 50%;
+  top: 49%;
+  width: 1240px;
+  height: 1240px;
+  margin-left: -620px;
+  margin-top: -620px;
+  mix-blend-mode: screen;
+}
+
+#result-halo {
+  background: radial-gradient(
+    circle closest-side var(--in-oklab),
+    rgba(242, 223, 179, 0.44) 0%,
+    rgba(232, 141, 180, 0.20) 46%,
+    rgba(118, 212, 238, 0.11) 68%,
+    transparent 98%
+  );
+}
+
+#result-halo-blue {
+  opacity: 0;
+  background: radial-gradient(
+    circle closest-side var(--in-oklab),
+    rgba(130, 216, 255, 0.42) 0%,
+    rgba(56, 134, 235, 0.24) 46%,
+    rgba(22, 62, 168, 0.12) 70%,
+    transparent 98%
+  );
+}
+
+#result-bg-ring {
+  position: absolute;
+  left: 50%;
+  top: 49.5%;
+  width: 1700px;
+  height: 1700px;
+  margin-left: -850px;
+  margin-top: -850px;
+  opacity: 0;
+  mix-blend-mode: screen;
+}
+
+.result-ring-layer {
+  position: absolute;
+  inset: 0;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  mix-blend-mode: screen;
+  opacity: 0;
+}
+
+#result-ring-rainbow {
+  background-image: url("../assets/generated/opt_result_ring_rainbow.png");
+}
+
+#result-ring-gold {
+  background-image: url("../assets/generated/opt_result_ring_gold.png");
+}
+
+#result-ring-blue {
+  background-image: url("../assets/generated/opt_result_ring_blue.png");
+}
+
+/* 遠景ボケ光粒レイヤー（カード背面） */
+#bokeh-back-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 22;
+  pointer-events: none;
+}
+
+#card-stage {
+  position: absolute;
+  left: 50%;
+  top: 165px;
+  width: var(--card-w);
+  height: var(--card-h);
+  margin-left: calc(var(--card-w) * -0.5);
+  perspective: 1800px;
+  z-index: 30;
+  opacity: 0;
+}
+
+#ssr-card {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+}
+
+.card-face {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--card-outer-r);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.card-back {
+  transform: rotateY(180deg) translateZ(5px);
+  overflow: hidden;
+  background: #070b1a;
+  box-shadow:
+    0 28px 80px rgba(0, 0, 0, 0.85),
+    0 0 65px rgba(212, 162, 76, 0.58);
+}
+
+/* 3D回転中の金属カード側面厚みレイヤー */
+.card-edge-slice {
+  position: absolute;
+  inset: 1px;
+  border-radius: var(--card-outer-r);
+  pointer-events: none;
+  backface-visibility: visible;
+  background: linear-gradient(
+    135deg var(--in-oklch),
+    rgba(242, 223, 179, 0.88) 0%,
+    rgba(138, 96, 36, 0.94) 32%,
+    rgba(255, 252, 245, 0.92) 50%,
+    rgba(118, 212, 238, 0.65) 68%,
+    rgba(156, 112, 42, 0.92) 100%
+  );
+  box-shadow: inset 0 0 0 3px rgba(242, 223, 179, 0.92);
+}
+
+.card-edge-s1 { transform: translateZ(-4px); }
+.card-edge-s2,
+.card-edge-s3,
+.card-edge-s4 { display: none; /* Lite デチューン: 3D 側面スライスを 5 枚 -> 2 枚に軽量化 */ }
+.card-edge-s5 { transform: translateZ(4px); }
+
+.card-back-art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  pointer-events: none;
+}
+
+.card-back-frame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 20;
+  pointer-events: none;
+  background-image: url("../assets/generated/mat_rainbow_frame.png");
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+}
+
+/* 回転中に裏面・表面を走る角度連動スペキュラバー */
+#spin-spec-back,
+#spin-spec-front {
+  position: absolute;
+  top: -260px;
+  left: -420px;
+  width: 280px;
+  height: 2150px;
+  transform: rotate(18deg);
+  mix-blend-mode: screen;
+  opacity: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg var(--in-oklch),
+    transparent 0%,
+    rgba(118, 212, 238, 0.30) 20%,
+    rgba(255, 253, 245, 0.95) 50%,
+    rgba(242, 213, 143, 0.36) 80%,
+    transparent 100%
+  );
+}
+
+#spin-spec-back {
+  z-index: 10;
+}
+
+/* 裏面タメ時の紋章チャージ光＆外枠プリズム漏れ光 */
+#card-back-emblem-glow {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 680px;
+  height: 680px;
+  margin-left: -340px;
+  margin-top: -340px;
+  z-index: 16;
+  opacity: 0;
+  mix-blend-mode: screen;
+  pointer-events: none;
+  background:
+    url("../assets/generated/opt_sparkle_gold.png") center/62% 62% no-repeat,
+    radial-gradient(
+      circle closest-side var(--in-oklab),
+      rgba(255, 254, 248, 0.95) 0%,
+      rgba(242, 223, 179, 0.72) 24%,
+      rgba(212, 162, 76, 0.28) 54%,
+      transparent 100%
+    );
+}
+
+/* カード外枠リング領域（ボーダー幅分）のみを中抜き透過マスクで切り出す共通定義 */
+#card-back-rim-burst,
+#frame-holo-glint,
+#frame-rim-glare {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--card-outer-r);
+  padding: var(--card-border);
+  pointer-events: none;
+  mix-blend-mode: screen;
+  opacity: 0;
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+
+#card-back-rim-burst {
+  z-index: 24;
+  background: linear-gradient(
+    132deg var(--in-oklch),
+    rgba(118, 212, 238, 0.88) 0%,
+    rgba(255, 254, 248, 0.98) 28%,
+    rgba(242, 213, 143, 0.92) 52%,
+    rgba(232, 141, 180, 0.88) 76%,
+    rgba(118, 212, 238, 0.92) 100%
+  );
+}
+
+#spin-spec-front-clip {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--card-outer-r);
+  overflow: hidden;
+  overflow: clip;
+  pointer-events: none;
+  z-index: 44;
+}
+
+/* 表面の回転スペキュラも被写体（顔）直撃を避けて周辺と枠を強く照らす */
+#spin-spec-front {
+  -webkit-mask-image: radial-gradient(
+    ellipse 46% 38% at 50% 42%,
+    rgba(0, 0, 0, 0.04) 0%,
+    rgba(0, 0, 0, 0.25) 68%,
+    rgba(0, 0, 0, 1) 100%
+  );
+  mask-image: radial-gradient(
+    ellipse 46% 38% at 50% 42%,
+    rgba(0, 0, 0, 0.04) 0%,
+    rgba(0, 0, 0, 0.25) 68%,
+    rgba(0, 0, 0, 1) 100%
+  );
+}
+
+.card-front {
+  transform: translateZ(5px);
+  padding: var(--card-border);
+  background: #090d1f;
+  box-shadow:
+    0 36px 90px rgba(0, 0, 0, 0.88),
+    0 0 58px rgba(242, 223, 179, 0.44),
+    0 0 120px rgba(232, 141, 180, 0.28);
+}
+
+#mat-rainbow-frame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 40;
+  pointer-events: none;
+  display: block;
+}
+
+/* 枠上だけを走る高輝度リムシマー（12〜15s の微動呼吸でも活躍） */
+#frame-holo-glint {
+  z-index: 42;
+  background-image:
+    linear-gradient(
+      118deg var(--in-oklch),
+      transparent 18%,
+      rgba(118, 212, 238, 0.55) 38%,
+      rgba(255, 253, 245, 0.95) 50%,
+      rgba(232, 141, 180, 0.55) 62%,
+      transparent 82%
+    ),
+    url("../assets/generated/mat_holo_prism.png");
+  background-size: 240% 240%, 360px 360px;
+  background-position: 0% 0%, 0 0;
+}
+
+/* 13.2s 付近で外枠リム上を1回だけ鋭く走る高輝度グレア */
+#frame-rim-glare {
+  z-index: 43;
+  background-image: linear-gradient(
+    118deg var(--in-oklch),
+    transparent 34%,
+    rgba(118, 212, 238, 0.55) 45%,
+    rgba(255, 254, 248, 1) 50%,
+    rgba(242, 213, 143, 0.72) 55%,
+    transparent 66%
+  );
+  background-size: 320% 320%;
+  background-position: 0% 0%;
+}
+
+.card-front-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: var(--card-inner-r);
+  overflow: hidden;
+  background: linear-gradient(180deg var(--in-oklab), #111631 0%, #090d1f 100%);
+  display: flex;
+  flex-direction: column;
+  isolation: isolate;
+}
+
+.card-photo-area {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #0b1024;
+  z-index: 1;
+}
+
+#card-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 35%;
+  display: block;
+}
+
+.photo-vignette {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(
+      to bottom var(--in-oklab),
+      rgba(6, 9, 22, 0.30) 0%,
+      transparent 16%,
+      transparent 54%,
+      rgba(6, 9, 22, var(--vignette-mid-a, 0.58)) 73%,
+      rgba(4, 6, 17, var(--vignette-bot-a, 0.90)) 100%
+    ),
+    radial-gradient(circle at 50% 42% var(--in-oklab), transparent 58%, rgba(4, 6, 17, 0.34) 100%);
+}
+
+/* ホログラム反射レイヤー：中央の被写体（顔〜上半身）は 0% に保護し、外縁だけで上品に煌めかせる */
+#holo-mask-zone {
+  position: absolute;
+  inset: 0;
+  z-index: 15;
+  pointer-events: none;
+  overflow: hidden;
+  mix-blend-mode: screen;
+  -webkit-mask-image: radial-gradient(
+    ellipse 50% 42% at 50% 42%,
+    transparent 0%,
+    transparent 66%,
+    rgba(0, 0, 0, 0.26) 84%,
+    rgba(0, 0, 0, 0.90) 100%
+  );
+  mask-image: radial-gradient(
+    ellipse 50% 42% at 50% 42%,
+    transparent 0%,
+    transparent 66%,
+    rgba(0, 0, 0, 0.26) 84%,
+    rgba(0, 0, 0, 0.90) 100%
+  );
+}
+
+#holo-sweep-1,
+#holo-sweep-2 {
+  position: absolute;
+  top: -220px;
+  left: -650px;
+  width: 190px;
+  height: 1950px;
+  transform: rotate(24deg);
+  mix-blend-mode: screen;
+  opacity: 0;
+  background-image:
+    linear-gradient(
+      90deg var(--in-oklch),
+      transparent 0%,
+      rgba(118, 212, 238, 0.36) 28%,
+      rgba(255, 252, 245, 0.86) 50%,
+      rgba(232, 141, 180, 0.36) 72%,
+      transparent 100%
+    ),
+    url("../assets/generated/mat_holo_prism.png");
+  background-size: 100% 100%, 360px 360px;
+  background-blend-mode: screen;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 18%, #000 82%, transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0%, #000 18%, #000 82%, transparent 100%);
+}
+
+#holo-static-sheen {
+  position: absolute;
+  inset: 0;
+  mix-blend-mode: screen;
+  opacity: 0;
+  background-image: linear-gradient(
+    128deg var(--in-oklch),
+    rgba(255, 252, 245, 0.22) 0%,
+    rgba(242, 223, 179, 0.12) 18%,
+    transparent 36%,
+    transparent 70%,
+    rgba(118, 212, 238, 0.14) 86%,
+    rgba(232, 141, 180, 0.18) 100%
+  );
+}
+
+/* 脱Web UI化：角丸ボックス・ピル枠を撤廃し、物理生成クレスト＆刻印プレートを直置き */
+#ssr-emblem {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 32;
+  opacity: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  filter: none;
+}
+
+#ssr-emblem-img {
+  display: none;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: left center;
+}
+
+/* CLI変数上書き時のみのフォールバック（斜めカット座布団＋金文字） */
+#ssr-emblem-text {
+  padding: 8px 30px 10px 26px;
+  clip-path: polygon(12px 0, 100% 0, calc(100% - 12px) 100%, 0 100%);
+  background: linear-gradient(180deg, rgba(18, 24, 56, 0.88), rgba(6, 9, 24, 0.92));
+  border-top: 2px solid #f2dfb3;
+  border-bottom: 2px solid #d4a24c;
+  font-family: var(--font-display);
+  font-size: 58px;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: 0.06em;
+  color: #f2dfb3;
+  text-shadow: 0 3px 8px rgba(0, 0, 0, 0.85);
+}
+
+#attr-badge {
+  position: absolute;
+  top: 22px;
+  right: 16px;
+  z-index: 32;
+  opacity: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  filter: none;
+}
+
+#attr-badge-img {
+  display: none;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: right center;
+}
+
+#attr-badge-text {
+  padding: 10px 26px;
+  clip-path: polygon(16px 0, calc(100% - 16px) 0, 100% 50%, calc(100% - 16px) 100%, 16px 100%, 0 50%);
+  background: linear-gradient(180deg, rgba(20, 26, 58, 0.88), rgba(7, 10, 26, 0.92));
+  border-top: 1.5px solid rgba(242, 223, 179, 0.85);
+  border-bottom: 1.5px solid rgba(212, 162, 76, 0.85);
+  font-family: var(--font-jp);
+  font-size: 25px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #f2dfb3;
+}
+
+#card-overlay-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 36px 40px 66px;
+  gap: 14px;
+  pointer-events: none;
+}
+
+#stars-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0px;
+  margin: -14px 0 -10px;
+}
+
+.star-item {
+  position: relative;
+  width: 90px;
+  height: 90px;
+  margin: 0 -10px;
+  opacity: 0;
+  mix-blend-mode: screen;
+  display: block;
+  background-image: url("../assets/generated/opt_star_gold.png");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.star-flare {
+  position: absolute;
+  inset: -16px;
+  opacity: 0;
+  mix-blend-mode: screen;
+  background: url("../assets/generated/opt_sparkle_white.png") center/contain no-repeat;
+  pointer-events: none;
+}
+
+.typo-slot {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  max-width: 100%;
+  opacity: 0;
+}
+
+#title-wipe-glint {
+  position: absolute;
+  left: 50%;
+  top: -10%;
+  width: 26px;
+  height: 120%;
+  margin-left: -13px;
+  transform: skewX(-18deg);
+  mix-blend-mode: screen;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 5;
+  background: linear-gradient(
+    90deg var(--in-oklch),
+    transparent 0%,
+    rgba(242, 223, 179, 0.55) 30%,
+    rgba(255, 254, 248, 1) 50%,
+    rgba(242, 223, 179, 0.55) 70%,
+    transparent 100%
+  );
+}
+
+.typo-img {
+  display: none;
+  max-width: 100%;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+#card-subtitle {
+  font-family: var(--font-jp);
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: #f2dfb3;
+  text-shadow: 0 3px 14px rgba(0, 0, 0, 0.95);
+}
+
+#card-title {
+  font-family: var(--font-display);
+  font-size: 66px;
+  font-weight: 900;
+  line-height: 1.2;
+  letter-spacing: 0.06em;
+  color: var(--ink-ivory);
+  text-align: center;
+  text-shadow:
+    0 4px 18px rgba(0, 0, 0, 0.95),
+    0 0 24px rgba(242, 223, 179, 0.42);
+}
+
+#card-flavor {
+  font-family: var(--font-jp);
+  font-size: 27px;
+  font-weight: 500;
+  line-height: 1.45;
+  letter-spacing: 0.03em;
+  color: #f4f1ea;
+  text-align: center;
+  text-shadow: 0 3px 14px rgba(0, 0, 0, 0.95);
+}
+
+#card-no-corner {
+  position: absolute;
+  right: 36px;
+  bottom: 22px;
+  z-index: 32;
+  opacity: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.75));
+}
+
+#card-no-img {
+  display: none;
+  max-height: 38px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: right center;
+}
+
+#card-no-text {
+  font-family: var(--font-ui);
+  font-size: 22px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.12em;
+  color: rgba(241, 245, 249, 0.88);
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.95);
+}
+
+/* =========================================================================
+ * Phase 3.5 モダンレイアウト（royal-fantasy / pop-horizontal）
+ * ========================================================================= */
+#royal-rule-wrap {
+  display: none;
+  margin-bottom: 4px;
+  transform-origin: center center;
+}
+
+.card-front-inner[data-typo-layout="royal-fantasy"] #ssr-emblem {
+  top: 30px;
+  left: 36px;
+}
+
+.card-front-inner[data-typo-layout="royal-fantasy"] #attr-badge {
+  top: 36px;
+  right: 34px;
+}
+
+.card-front-inner[data-typo-layout="royal-fantasy"] .photo-vignette {
+  background: linear-gradient(
+    to bottom,
+    rgba(6, 9, 20, 0) 0%,
+    rgba(6, 9, 20, 0) 62%,
+    rgba(6, 9, 20, var(--vignette-mid-a, 0.42)) 80%,
+    rgba(6, 9, 20, var(--vignette-bot-a, 0.78)) 100%
+  );
+}
+
+.card-front-inner[data-typo-layout="royal-fantasy"] #card-overlay-layer {
+  align-items: center;
+  padding: 36px 40px 44px;
+  gap: 10px;
+}
+
+.card-front-inner[data-typo-layout="royal-fantasy"] #card-no-corner,
+.card-front-inner[data-typo-layout="pop-horizontal"] #card-no-corner {
+  right: 26px;
+  bottom: 16px;
+}
+
+.card-front-inner[data-typo-layout="royal-fantasy"] #card-no-img,
+.card-front-inner[data-typo-layout="pop-horizontal"] #card-no-img {
+  max-height: 22px;
+}
+
+.card-front-inner[data-typo-layout="royal-fantasy"] #card-no-text,
+.card-front-inner[data-typo-layout="pop-horizontal"] #card-no-text {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  letter-spacing: 0.10em;
+  color: rgba(242, 223, 179, 0.72);
+}
+
+/* ② Pop-2B: pop-horizontal（水平・リボンなし・圧縮 SSR 左上重心・右下右寄せ） */
+.card-front-inner[data-typo-layout="pop-horizontal"] #ssr-emblem {
+  top: 34px;
+  left: 42px;
+  filter: none;
+}
+
+.card-front-inner[data-typo-layout="pop-horizontal"] #attr-badge {
+  top: 42px;
+  right: 34px;
+  filter: none;
+}
+
+.card-front-inner[data-typo-layout="pop-horizontal"] .photo-vignette {
+  background: linear-gradient(
+    to bottom,
+    rgba(12, 10, 22, 0) 0%,
+    rgba(12, 10, 22, 0) 60%,
+    rgba(12, 10, 22, var(--vignette-mid-a, 0.24)) 78%,
+    rgba(12, 10, 22, var(--vignette-bot-a, 0.58)) 100%
+  );
+}
+
+.card-front-inner[data-typo-layout="pop-horizontal"] #card-overlay-layer {
+  align-items: flex-end;
+  padding: 36px 36px 46px;
+  gap: 8px;
+}
+
+.card-front-inner[data-typo-layout="pop-horizontal"][data-typo-mirror="true"] #card-overlay-layer {
+  align-items: flex-start;
+}
+
+#celebration-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  pointer-events: none;
+  perspective: 1200px;
+}
+
+.sparkle-star {
+  position: absolute;
+  left: 50%;
+  top: 49.5%;
+  opacity: 0;
+  mix-blend-mode: screen;
+  display: block;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.foil-flake {
+  position: absolute;
+  left: 50%;
+  top: 49.5%;
+  opacity: 0;
+  display: block;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  filter: none;
+}
+
+.bokeh-orb {
+  position: absolute;
+  left: 50%;
+  top: 49.5%;
+  opacity: 0;
+  mix-blend-mode: screen;
+  display: block;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+#landing-shockwave {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 640px;
+  height: 640px;
+  margin-left: -320px;
+  margin-top: -320px;
+  background-image: url("../assets/generated/opt_shock_gold.png");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  mix-blend-mode: screen;
+  opacity: 0;
+  z-index: 25;
+}
+
+#mat-window-depth {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 12;
+  pointer-events: none;
+  display: block;
+}
+
+/* =========================================================================
+ * Phase 5: Landscape (1920x1080 / Card 1480x860) レイアウト調整
+ * ========================================================================= */
+html[data-orientation="landscape"] #card-stage {
+  top: 110px;
+}
+
+html[data-orientation="landscape"] #result-bg-ring {
+  width: 1380px;
+  height: 1380px;
+  margin-left: -690px;
+  margin-top: -690px;
+}
+
+html[data-orientation="landscape"] #result-halo,
+html[data-orientation="landscape"] #result-halo-blue {
+  width: 1560px;
+  height: 1160px;
+  margin-left: -780px;
+  margin-top: -580px;
+}
+
+html[data-orientation="landscape"] #spin-spec-front {
+  -webkit-mask-image: radial-gradient(
+    ellipse 42% 48% at 50% 44%,
+    rgba(0, 0, 0, 0.04) 0%,
+    rgba(0, 0, 0, 0.25) 68%,
+    rgba(0, 0, 0, 1) 100%
+  );
+  mask-image: radial-gradient(
+    ellipse 42% 48% at 50% 44%,
+    rgba(0, 0, 0, 0.04) 0%,
+    rgba(0, 0, 0, 0.25) 68%,
+    rgba(0, 0, 0, 1) 100%
+  );
+}
+
+html[data-orientation="landscape"] #holo-mask-zone {
+  -webkit-mask-image: radial-gradient(
+    ellipse 46% 50% at 50% 44%,
+    transparent 0%,
+    transparent 66%,
+    rgba(0, 0, 0, 0.26) 84%,
+    rgba(0, 0, 0, 0.90) 100%
+  );
+  mask-image: radial-gradient(
+    ellipse 46% 50% at 50% 44%,
+    transparent 0%,
+    transparent 66%,
+    rgba(0, 0, 0, 0.26) 84%,
+    rgba(0, 0, 0, 0.90) 100%
+  );
+}
+
+html[data-orientation="landscape"] .photo-vignette {
+  background:
+    linear-gradient(
+      to bottom var(--in-oklab),
+      rgba(6, 9, 22, 0.24) 0%,
+      transparent 16%,
+      transparent 62%,
+      rgba(6, 9, 22, var(--vignette-mid-a, 0.54)) 79%,
+      rgba(4, 6, 17, var(--vignette-bot-a, 0.88)) 100%
+    ),
+    radial-gradient(circle at 50% 44% var(--in-oklab), transparent 62%, rgba(4, 6, 17, 0.30) 100%);
+}
+
+html[data-orientation="landscape"] .card-front-inner[data-typo-layout="royal-fantasy"] .photo-vignette {
+  background: linear-gradient(
+    to bottom,
+    rgba(6, 9, 20, 0) 0%,
+    rgba(6, 9, 20, 0) 65%,
+    rgba(6, 9, 20, var(--vignette-mid-a, 0.40)) 82%,
+    rgba(6, 9, 20, var(--vignette-bot-a, 0.76)) 100%
+  );
+}
+
+html[data-orientation="landscape"] .card-front-inner[data-typo-layout="pop-horizontal"] .photo-vignette {
+  background: linear-gradient(
+    to bottom,
+    rgba(12, 10, 22, 0) 0%,
+    rgba(12, 10, 22, 0) 64%,
+    rgba(12, 10, 22, var(--vignette-mid-a, 0.22)) 80%,
+    rgba(12, 10, 22, var(--vignette-bot-a, 0.56)) 100%
+  );
+}
+
+html[data-orientation="landscape"] #card-overlay-layer {
+  padding: 20px 48px 34px;
+  gap: 8px;
+}
+
+html[data-orientation="landscape"] .card-front-inner[data-typo-layout="royal-fantasy"] #card-overlay-layer {
+  padding: 20px 48px 32px;
+  gap: 6px;
+}
+
+html[data-orientation="landscape"] .card-front-inner[data-typo-layout="pop-horizontal"] #card-overlay-layer {
+  padding: 20px 44px 34px;
+  gap: 6px;
+}
+
+html[data-orientation="landscape"] .star-item {
+  width: 74px;
+  height: 74px;
+  margin: 0 -8px;
+}
+
+html[data-orientation="landscape"] .card-front-inner[data-typo-layout="royal-fantasy"] #ssr-emblem {
+  top: 22px;
+  left: 32px;
+}
+
+html[data-orientation="landscape"] .card-front-inner[data-typo-layout="royal-fantasy"] #attr-badge {
+  top: 28px;
+  right: 30px;
+}
+
+html[data-orientation="landscape"] .card-front-inner[data-typo-layout="pop-horizontal"] #ssr-emblem {
+  top: 24px;
+  left: 36px;
+}
+
+html[data-orientation="landscape"] .card-front-inner[data-typo-layout="pop-horizontal"] #attr-badge {
+  top: 32px;
+  right: 30px;
+}

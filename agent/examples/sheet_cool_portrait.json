@@ -1,0 +1,22 @@
+{
+  "photo": "assets/photo.jpg",
+  "title": "ちいさな覇王",
+  "orientation": "portrait",
+  "subtitle": "「覚醒の眼光」",
+  "flavor": "",
+  "rarity": "SSR",
+  "stars": 0,
+  "attributeBadge": "光",
+  "attributeLabel": "SOVEREIGN",
+  "cardNo": "NO.777-SSR",
+  "typography": {
+    "preset": "royal-foil"
+  },
+  "photoFit": "cover",
+  "photoPosition": "50% 35%",
+  "photoZoom": 1.05,
+  "resultRingMode": "rainbow",
+  "seed": 20261777,
+  "mode": "sheet",
+  "agentNotes": "縦モード・かっこいい系（royal-foil）の標準記入シート例。"
+}

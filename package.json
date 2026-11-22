@@ -1,0 +1,18 @@
+{
+  "name": "ssrgenerate-lite",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:typo": "python scripts/render_typography.py",
+    "build:optics": "python scripts/render_optics.py",
+    "build:material": "python scripts/render_material.py",
+    "build:se": "python scripts/generate_se.py",
+    "build:assets": "python scripts/build_all.py",
+    "dev": "npx --yes hyperframes@0.9.72 preview",
+    "check": "npx --yes hyperframes@0.9.72 check",
+    "render": "node scripts/render_video.mjs",
+    "qa": "python scripts/qa_video.py",
+    "agent:setup": "python agent/ssr_agent.py setup",
+    "agent:capabilities": "python agent/ssr_agent.py capabilities --json"
+  }
+}

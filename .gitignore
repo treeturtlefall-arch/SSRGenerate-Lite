@@ -1,0 +1,40 @@
+node_modules/
+renders/
+!renders/.gitkeep
+.media/
+.hyperframes/
+.hf_home/
+.tmp/
+.venv/
+venv/
+*.log
+__pycache__/
+*.pyc
+repomix-output.xml
+
+# Generated assets & SE (rebuilt deterministically via `npm run build:assets` or `ssr-agent setup`)
+assets/generated/*
+!assets/generated/.gitkeep
+assets/se_*.wav
+
+# Bundled fonts are fetched from pinned upstream commit on `ssr-agent setup` (keep repository < 2MB)
+assets/fonts/*.ttf
+assets/fonts/*.otf
+!assets/fonts/LICENSE-*.txt
+
+# Private input photos & test directories
+assets/*.jpg
+assets/*.jpeg
+assets/*.png
+assets/*.webp
+assets/*.heic
+assets/Pastel-test/
+assets/Random1/
+
+# Local custom SE library (commercial / personal samples - never commit)
+assets/se_custom/*
+!assets/se_custom/README.md
+
+# Local custom font library (commercial / non-redistributable fonts - never commit)
+assets/fonts_custom/*
+!assets/fonts_custom/README.md

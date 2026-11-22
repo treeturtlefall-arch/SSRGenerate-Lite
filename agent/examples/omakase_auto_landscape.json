@@ -1,0 +1,22 @@
+{
+  "photo": "assets/photo.jpg",
+  "title": "休日のドライブ",
+  "orientation": "auto",
+  "subtitle": "「風を切るひととき」",
+  "flavor": "",
+  "rarity": "SSR",
+  "stars": 0,
+  "attributeBadge": "風",
+  "attributeLabel": "BREEZE",
+  "cardNo": "NO.512-SSR",
+  "typography": {
+    "preset": "royal-foil"
+  },
+  "photoFit": "cover",
+  "photoPosition": "45% 50%",
+  "photoZoom": 1.05,
+  "resultRingMode": "rainbow",
+  "seed": 20261512,
+  "mode": "omakase",
+  "agentNotes": "orientation=auto により入力写真の縦横比から向きを自動判定するおまかせシート例。"
+}
