@@ -74,6 +74,10 @@ npm run render:card    # フル解像度 card.png（900x1590 / 1480x860）単体
 npm run qa -- renders/SSR_cute-pastel_20261123.mp4 --check-audio  # 定量 QA
 ```
 
+## ライセンス
+
+MIT License（全文は [LICENSE](LICENSE) を参照）。なお、セットアップ時に取得するフォントには、それぞれのフォントのライセンスが適用されます。
+
 ## 開発について
 
 SSRGenerate-Lite は、人間（企画・ローカル実装）、Google Antigravity、そして Muse 上のパーソナルエージェントの三人で共同開発しています。
