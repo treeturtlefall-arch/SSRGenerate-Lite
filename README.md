@@ -5,10 +5,11 @@
 
 ![生成例カード（cute-pastel）](docs/sample-card-cute-pastel.png)
 
-生成例の動画（16秒）:
-https://github.com/user-attachments/assets/69884864-1e3e-4cc2-a816-392e275edd5b
-
 *生成例（cute-pastel）。動画（縦 540×960）と、このカード静止画（縦 900×1590）が同時に出力されます。*
+
+生成例の動画（16秒）:
+
+https://github.com/user-attachments/assets/69884864-1e3e-4cc2-a816-392e275edd5b
 
 ## できること
 
