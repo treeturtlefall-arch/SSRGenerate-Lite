@@ -21,7 +21,7 @@
       "type": "string",
       "enum": ["auto", "portrait", "landscape"],
       "default": "auto",
-      "description": "動画とカードの向き。エージェント層の既定は auto（写真の縦横比から判定）。portrait=720x1280, landscape=1280x720。"
+      "description": "動画とカードの向き。エージェント層の既定は auto（写真の縦横比から判定）。portrait=動画540x960(カード900x1590), landscape=動画960x540(カード1480x860)。"
     },
     "subtitle": {
       "type": "string",

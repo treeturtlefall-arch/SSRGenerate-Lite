@@ -63,12 +63,12 @@
   --font-display: "YujiSyuku", "Playfair Display", serif;
   --font-ui: "CineCaption", "Montserrat", "Noto Sans JP", sans-serif;
   --font-mono: "JetBrainsMono", monospace;
-  /* scripts/_utils.py の LayoutSpec と同期 (内部座標系 1080x1920 -> 出力 720x1280) */
+  /* scripts/_utils.py の LayoutSpec と同期 (内部座標系 1080x1920 -> 出力 540x960) */
   --canvas-w: 1080px;
   --canvas-h: 1920px;
-  --output-w: 720px;
-  --output-h: 1280px;
-  --lite-scale: calc(2 / 3);
+  --output-w: 540px;
+  --output-h: 960px;
+  --lite-scale: 0.5;
   --card-w: 900px;
   --card-h: 1590px;
   --card-border: 20px;
@@ -79,8 +79,8 @@
 html[data-orientation="landscape"] {
   --canvas-w: 1920px;
   --canvas-h: 1080px;
-  --output-w: 1280px;
-  --output-h: 720px;
+  --output-w: 960px;
+  --output-h: 540px;
   --card-w: 1480px;
   --card-h: 860px;
 }

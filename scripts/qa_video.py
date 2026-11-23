@@ -173,7 +173,7 @@ def analyze_video(
     info = probe_streams(video_path)
     fps = info["fps"]
     is_landscape = info["width"] > info["height"]
-    expected_w, expected_h = (1280, 720) if is_landscape else (720, 1280)
+    expected_w, expected_h = (960, 540) if is_landscape else (540, 960)
     dec_w, dec_h = (480, 270) if is_landscape else (270, 480)
 
     audio_fut = None
@@ -191,9 +191,9 @@ def analyze_video(
     p95 = np.percentile(frames, 95, axis=(1, 2))
     spread = p95 - p5
 
-    # 1. ストリーム仕様 (Lite 既定: 720x1280 または 1280x720 @ 24fps)
+    # 1. ストリーム仕様 (Lite 既定: 540x960 または 960x540 @ 24fps; 720p/1080p も後方互換許容)
     res_ok = (info["width"] == expected_w and info["height"] == expected_h) or (
-        (info["width"], info["height"]) in ((1080, 1920), (1920, 1080))
+        (info["width"], info["height"]) in ((720, 1280), (1280, 720), (1080, 1920), (1920, 1080))
     )
     fps_ok = abs(info["fps"] - expected_fps) <= 0.5 or abs(info["fps"] - 30.0) <= 0.5
     stream_pass = (

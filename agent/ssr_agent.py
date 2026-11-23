@@ -401,11 +401,14 @@ def validate_and_normalize_request(raw_req: Dict[str, Any]) -> Tuple[Dict[str, A
         "agentNotes": " | ".join(n for n in notes if n),
     }
 
-    output_w, output_h = (1280, 720) if resolved_ori == "landscape" else (720, 1280)
+    output_w, output_h = (960, 540) if resolved_ori == "landscape" else (540, 960)
+    card_w, card_h = (1480, 860) if resolved_ori == "landscape" else (900, 1590)
     resolved_meta = {
         "resolvedOrientation": resolved_ori,
         "outputWidth": output_w,
         "outputHeight": output_h,
+        "cardWidth": card_w,
+        "cardHeight": card_h,
         "fps": 24,
         "photoWidth": pw,
         "photoHeight": ph,
@@ -494,12 +497,13 @@ def cmd_capabilities(args: argparse.Namespace) -> int:
         "upstreamCommit": UPSTREAM_COMMIT,
         "profile": "lite",
         "defaultOutput": {
-            "portrait": {"width": 720, "height": 1280},
-            "landscape": {"width": 1280, "height": 720},
+            "portrait": {"width": 540, "height": 960, "cardWidth": 900, "cardHeight": 1590},
+            "landscape": {"width": 960, "height": 540, "cardWidth": 1480, "cardHeight": 860},
             "fps": 24,
             "crf": 20,
             "durationSec": 16.0,
             "workers": int(os.environ.get("SSR_LITE_WORKERS", "3")),
+            "cardPng": True,
         },
         "supportedPresets": list(VALID_PRESETS),
         "supportedOrientations": list(VALID_ORIENTATIONS),
@@ -526,6 +530,7 @@ def _execute_render_pipeline(
     resolved_meta: Dict[str, Any],
     warnings: List[str],
     explicit_output: Optional[str] = None,
+    explicit_card_output: Optional[str] = None,
     save_request_path: Optional[Path] = None,
     as_json: bool = True,
 ) -> int:
@@ -576,6 +581,8 @@ def _execute_render_pipeline(
     cmd = ["node", str(SCRIPTS_DIR / "render_video.mjs"), "--variables-file", str(vars_file)]
     if explicit_output:
         cmd.extend(["-o", explicit_output])
+    if explicit_card_output:
+        cmd.extend(["--card-output", explicit_card_output])
 
     try:
         render_res = subprocess.run(
@@ -622,6 +629,16 @@ def _execute_render_pipeline(
 
     out_mp4_rel = out_mp4.resolve().relative_to(PROJECT_ROOT.resolve()).as_posix() if out_mp4.is_file() else str(out_mp4)
 
+    # 同時出力されたフル解像度カード静止画 PNG を特定
+    if explicit_card_output:
+        out_card_png = Path(explicit_card_output) if Path(explicit_card_output).is_absolute() else (PROJECT_ROOT / explicit_card_output)
+    else:
+        out_card_png = out_mp4.with_name(f"{out_mp4.stem}.card.png")
+    try:
+        out_card_rel = out_card_png.resolve().relative_to(PROJECT_ROOT.resolve()).as_posix() if out_card_png.is_file() else str(out_card_png)
+    except ValueError:
+        out_card_rel = str(out_card_png)
+
     # 正規化済み request.json を保存
     req_out_path = save_request_path or out_mp4.with_name(f"{out_mp4.stem}.request.json")
     req_out_path.write_text(json.dumps(normalized_req, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
@@ -640,11 +657,14 @@ def _execute_render_pipeline(
         "status": "ok" if qa_report["overall_pass"] else "qa_failed",
         "deliverable": qa_report["overall_pass"],
         "outputMp4": out_mp4_rel,
+        "outputCardPng": out_card_rel,
         "requestFile": req_out_rel,
         "resolved": {
             "orientation": resolved_meta["resolvedOrientation"],
             "width": qa_report["stream"]["width"],
             "height": qa_report["stream"]["height"],
+            "cardWidth": resolved_meta["cardWidth"],
+            "cardHeight": resolved_meta["cardHeight"],
             "fps": qa_report["stream"]["fps"],
             "durationSec": qa_report["stream"]["duration"],
         },
@@ -687,6 +707,7 @@ def cmd_render(args: argparse.Namespace) -> int:
         resolved_meta=resolved_meta,
         warnings=warnings,
         explicit_output=args.output,
+        explicit_card_output=args.card_output,
         as_json=args.json,
     )
 
@@ -730,6 +751,7 @@ def cmd_omakase(args: argparse.Namespace) -> int:
         resolved_meta=resolved_meta,
         warnings=warnings,
         explicit_output=args.output,
+        explicit_card_output=args.card_output,
         as_json=args.json,
     )
 
@@ -762,13 +784,14 @@ def build_parser() -> argparse.ArgumentParser:
     p_cap.add_argument("--json", action="store_true", default=True, help="Output as JSON")
     p_cap.set_defaults(func=cmd_capabilities)
 
-    p_ren = sub.add_parser("render", help="Validate request.json, render 720p/24fps MP4, and run automated QA")
+    p_ren = sub.add_parser("render", help="Validate request.json, render 540p/24fps MP4 + full-res card.png, and run automated QA")
     p_ren.add_argument("--request", required=True, help="Path to request.json")
     p_ren.add_argument("-o", "--output", default=None, help="Explicit output MP4 path")
+    p_ren.add_argument("--card-output", default=None, help="Explicit output full-res card PNG path")
     p_ren.add_argument("--json", action="store_true", default=True, help="Output result as JSON")
     p_ren.set_defaults(func=cmd_render)
 
-    p_oma = sub.add_parser("omakase", help="Generate SSR MP4 and filled request.json from photo + cool/cute style")
+    p_oma = sub.add_parser("omakase", help="Generate SSR MP4, full-res card.png, and filled request.json from photo + cool/cute style")
     p_oma.add_argument("--photo", required=True, help="Path to input photo")
     p_oma.add_argument("--style", default="cute", choices=["cute", "cool", "royal-foil", "cute-pastel"], help="Style choice")
     p_oma.add_argument("--orientation", default="auto", choices=["auto", "portrait", "landscape"])
@@ -781,6 +804,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_oma.add_argument("--photo-position", default=None, help="CSS object-position")
     p_oma.add_argument("--seed", type=int, default=None, help="Deterministic seed override")
     p_oma.add_argument("-o", "--output", default=None, help="Explicit output MP4 path")
+    p_oma.add_argument("--card-output", default=None, help="Explicit output full-res card PNG path")
     p_oma.add_argument("--json", action="store_true", default=True, help="Output result as JSON")
     p_oma.set_defaults(func=cmd_omakase)
 

@@ -1,11 +1,11 @@
 ---
 name: ssr-generate-lite
-description: 写真1枚から16.0秒のSSRガチャ当選演出MP4（縦720x1280 / 横1280x720、24fps）を自律生成・定量QA・納品するスキル。「SSRにして」「ガチャ演出動画を作って」「この写真をSSRカード動画にして」などの依頼で発動する。
+description: 写真1枚から16.0秒のSSRガチャ当選演出MP4（縦540x960 / 横960x540、24fps）とフル解像度カード静止画（縦900x1590 / 横1480x860）を自律生成・定量QA・納品するスキル。「SSRにして」「ガチャ演出動画を作って」「この写真をSSRカード動画にして」などの依頼で発動する。
 ---
 
 # SSRGenerate-Lite エージェント手順書 (`SKILL.md`)
 
-写真 1 枚から **16.0 秒（縦 `720×1280` / 横 `1280×720`、24fps）の SSR ガチャ当選演出 MP4** を生成し、自動定量 QA に合格した MP4 と再現用シート（`request.json`）を納品します。
+写真 1 枚から **16.0 秒（縦 `540×960` / 横 `960×540`、24fps）の SSR ガチャ当選演出 MP4** と **フル解像度カード静止画（`.card.png`、縦 `900×1590` / 横 `1480×860`）** を生成し、自動定量 QA に合格した MP4・カード PNG・再現用シート（`request.json`）を納品します。
 
 ## 1. 初回確認とセットアップ
 
@@ -43,12 +43,12 @@ bash agent/setup_env.sh
    - かわいい系 → `cute-pastel`（Zen Maru Gothic＋Outfit、ローズプラムステッカー）
    - 指定がない場合は写真の被写体・雰囲気から選び、理由を `agentNotes` に 1 行残す。
 2. **向き (`orientation`)**:
-   - 既定は `"auto"`（写真の縦横比から自動判定：縦長・正方形は `portrait` `720×1280`、横長は `landscape` `1280×720`）。
+   - 既定は `"auto"`（写真の縦横比から自動判定：縦長・正方形は `portrait` 動画 `540×960` / カード `900×1590`、横長は `landscape` 動画 `960×540` / カード `1480×860`）。
 3. **写真の寄せ位置 (`photoPosition`)**:
    - 縦モード (`portrait`): 主体が上部 35% 付近に来る `"50% 35%"` を基本に調整。
    - 横モード (`landscape`): `cute-pastel` はタイトルが右下に寄るため、主体が左〜中央に来るよう左右位置（例: `"45% 42%"`）を調整。
 4. **進め方**:
-   - 事前の細かな確認で止めず、最後までレンダリング＋QA を通して **完成 MP4 と記入済み `request.json` シート** を一緒に提示する。
+   - 事前の細かな確認で止めず、最後までレンダリング＋QA を通して **完成 MP4・フル解像度 `.card.png`・記入済み `request.json` シート** を一緒に提示する。
 
 ---
 
@@ -58,7 +58,8 @@ bash agent/setup_env.sh
 .venv/bin/python agent/ssr_agent.py render --request request.json --json
 ```
 
-出力 JSON の `"deliverable": true`（`"qa.overallPass": true`）を確認してから、以下の 3 点をユーザーへ納品してください。
+出力 JSON の `"deliverable": true`（`"qa.overallPass": true`）を確認してから、以下の 4 点をユーザーへ納品してください。
 1. 生成された MP4 ファイル（`outputMp4`）
-2. 確定した `request.json` の内容（または `requestFile`）
-3. QA 結果の要約（解像度・向き・LUFS・TruePeak・所要時間）
+2. 同時生成されたフル解像度カード静止画 PNG（`outputCardPng`）
+3. 確定した `request.json` の内容（または `requestFile`）
+4. QA 結果の要約（解像度・向き・LUFS・TruePeak・所要時間）

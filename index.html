@@ -21,8 +21,8 @@
 >
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=720, height=1280" />
-    <title>SSRGenerate-Lite — 16s SSR Gacha Reveal (720p/24fps)</title>
+    <meta name="viewport" content="width=540, height=960" />
+    <title>SSRGenerate-Lite — 16s SSR Gacha Reveal (540p/24fps)</title>
     <script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js"></script>
     <style>
       :root {
@@ -30,16 +30,16 @@
         --bg-edge-black: #000000;
         --canvas-w: 1080px;
         --canvas-h: 1920px;
-        --output-w: 720px;
-        --output-h: 1280px;
-        --lite-scale: calc(2 / 3);
+        --output-w: 540px;
+        --output-h: 960px;
+        --lite-scale: 0.5;
       }
 
       html[data-orientation="landscape"] {
         --canvas-w: 1920px;
         --canvas-h: 1080px;
-        --output-w: 1280px;
-        --output-h: 720px;
+        --output-w: 960px;
+        --output-h: 540px;
       }
 
       @supports (background: linear-gradient(in oklab, white, black)) {
@@ -114,8 +114,8 @@
       data-composition-id="main"
       data-start="0"
       data-duration="16"
-      data-width="720"
-      data-height="1280"
+      data-width="540"
+      data-height="960"
       data-fps="24"
     >
       <!-- =====================================================

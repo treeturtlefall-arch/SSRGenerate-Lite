@@ -15,10 +15,11 @@
 
 Muse エージェントの仮想環境（4 vCPU / RAM 7.7 GiB / GPU なし Software Rendering）で **1本 60〜90 秒以内** に生成・検証・納品できるよう、以下のデチューンを既定値として組み込んでいます。
 
-1. **出力解像度 720p（縦 `720×1280` / 横 `1280×720`）＋ 内部座標系 `1080×1920` 維持**
-   - `scripts/_utils.py` の `LayoutSpec` に `output_w` / `output_h`（`720×1280` / `1280×720`）と `fps=24` を定義。
+1. **動画出力解像度 540p（縦 `540×960` / 横 `960×540`）＋ 内部座標系 `1080×1920` ＆ フル解像度 `.card.png` 同時出力**
+   - `scripts/_utils.py` の `LayoutSpec` に `output_w` / `output_h`（`540×960` / `960×540`）と `fps=24` を定義。
    - HyperFrames の予約プリセット属性 `data-resolution`（1080p 強制）との衝突を避けるため、`<html>` の向き属性を `data-orientation="portrait|landscape"` に変更。
-   - コンポジション内部のレイアウト・カード寸法（`900×1590` / `1480×860`）・タイポ PNG 寸法は本家と 100% 同一のまま維持し、`#scene-summon-stage` / `#scene-result-stage` に `transform: scale(calc(2 / 3)); transform-origin: 0 0;` を適用してラスタライズ画素数を 44% に削減。これにより本家からのパッチ移植で座標換算が不要。
+   - コンポジション内部のレイアウト・カード寸法（`900×1590` / `1480×860`）・タイポ PNG 寸法は本家と 100% 同一のまま維持し、`#scene-summon-stage` / `#scene-result-stage` に `transform: scale(0.5); transform-origin: 0 0;` を適用して動画ラスタライズ画素数を 1080p 比 25%（720p 比 56.25%）に削減。これにより Muse VM で 100 秒切りを達成しつつ、本家からのパッチ移植で座標換算が不要。
+   - さらに `scripts/render_card_png.py` により、生成済みのフル解像度パーツ群から本家 1080p と完全同一解像度（縦 `900×1590` / 横 `1480×860`）のカード静止画 `renders/SSR_{preset}_{YYYYMMDD}.card.png` を約 0.2 秒で同時出力。
 2. **フレームレート `24fps`（384 フレーム）＆ エンコード軽量化（`-q standard --crf 20`）**
    - `index.html`, `compositions/scene-summon.html`, `compositions/scene-result.html`, `scripts/render_video.mjs` を `24fps` 既定に統一。
 3. **HyperFrames の `low-memory-mode` 自動1ワーカー制限の解除（`--no-low-memory-mode -w 3`）**

@@ -53,8 +53,8 @@ class LayoutSpec:
     orientation: str      # "portrait" | "landscape"
     canvas_w: int         # 1080 | 1920 (内部レイアウト座標系)
     canvas_h: int         # 1920 | 1080
-    output_w: int         # 720  | 1280 (Lite 720p 出力解像度)
-    output_h: int         # 1280 | 720
+    output_w: int         # 540  | 960  (Lite 540p 出力解像度)
+    output_h: int         # 960  | 540
     fps: int              # 24          (Lite 既定フレームレート)
     card_w: int           # 900  | 1480
     card_h: int           # 1590 | 860
@@ -69,8 +69,8 @@ PORTRAIT_LAYOUT = LayoutSpec(
     orientation="portrait",
     canvas_w=1080,
     canvas_h=1920,
-    output_w=720,
-    output_h=1280,
+    output_w=540,
+    output_h=960,
     fps=24,
     card_w=900,
     card_h=1590,
@@ -85,8 +85,8 @@ LANDSCAPE_LAYOUT = LayoutSpec(
     orientation="landscape",
     canvas_w=1920,
     canvas_h=1080,
-    output_w=1280,
-    output_h=720,
+    output_w=960,
+    output_h=540,
     fps=24,
     card_w=1480,
     card_h=860,

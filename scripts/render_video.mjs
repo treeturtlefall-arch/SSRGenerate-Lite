@@ -100,7 +100,9 @@ function parseCliArgs(argv) {
   let forceTypo = false;
   let noAutoTypo = false;
   let noFastAudio = false;
+  let noCardPng = false;
   let explicitOutput = null;
+  let explicitCardOutput = null;
   const passthroughArgs = [];
 
   for (let i = 0; i < argv.length; i += 1) {
@@ -119,6 +121,23 @@ function parseCliArgs(argv) {
     }
     if (a === "--no-fast-audio") {
       noFastAudio = true;
+      continue;
+    }
+    if (a === "--no-card-png") {
+      noCardPng = true;
+      continue;
+    }
+    if (a === "--card-output") {
+      if (i + 1 >= argv.length) {
+        console.error(`[error] ${a} requires an argument.`);
+        process.exit(1);
+      }
+      explicitCardOutput = argv[i + 1];
+      i += 1;
+      continue;
+    }
+    if (a.startsWith("--card-output=")) {
+      explicitCardOutput = a.slice("--card-output=".length);
       continue;
     }
     if (a === "-o" || a === "--output") {
@@ -155,7 +174,7 @@ function parseCliArgs(argv) {
     passthroughArgs.push(a);
   }
 
-  return { cliVars, dryRun, forceTypo, noAutoTypo, noFastAudio, explicitOutput, passthroughArgs };
+  return { cliVars, dryRun, forceTypo, noAutoTypo, noFastAudio, noCardPng, explicitOutput, explicitCardOutput, passthroughArgs };
 }
 
 function applyCliOverrides(baseCfg, overrides) {
@@ -396,7 +415,7 @@ function resolveOutputPath(preset) {
   return path.relative(PROJECT_ROOT, candidate).replace(/\\/g, "/");
 }
 
-const { cliVars, dryRun, forceTypo, noAutoTypo, noFastAudio, explicitOutput, passthroughArgs } = parseCliArgs(process.argv.slice(2));
+const { cliVars, dryRun, forceTypo, noAutoTypo, noFastAudio, noCardPng, explicitOutput, explicitCardOutput, passthroughArgs } = parseCliArgs(process.argv.slice(2));
 const hasExplicitOutput = Boolean(explicitOutput);
 const baseCfg = loadCardConfig();
 const effectiveCfg = applyCliOverrides(baseCfg, cliVars);
@@ -420,6 +439,9 @@ function encodeVariablesForHyperFrames(vars) {
 const preset = expectedSource.preset;
 const autoOutput = resolveOutputPath(preset);
 const finalOutput = explicitOutput || autoOutput;
+const defaultCardOutput = finalOutput.replace(/\.mp4$/i, "") + ".card.png";
+const finalCardOutput = explicitCardOutput || defaultCardOutput;
+const emitCardPng = !noCardPng && process.env.SSR_CARD_PNG !== "0";
 const preMixedAudioPath = path.join(PROJECT_ROOT, "assets", "se_mix_16s.wav");
 const useFastAudio = !noFastAudio && process.env.SSR_FAST_AUDIO !== "0" && fs.existsSync(preMixedAudioPath);
 
@@ -458,6 +480,7 @@ const syncReasonText = forceTypo ? ["forced", ...syncStatus.reasons] : syncStatu
 if (dryRun) {
   console.log(`[dry-run] preset=${preset}`);
   console.log(`[dry-run] output=${finalOutput}`);
+  console.log(`[dry-run] cardPng=${emitCardPng ? finalCardOutput : "disabled (--no-card-png)"}`);
   console.log(`[dry-run] fastAudio=${useFastAudio ? "enabled (assets/se_mix_16s.wav + ffmpeg mux)" : "disabled"}`);
   console.log(
     `[dry-run] typoSync=${shouldSyncTypo ? `needs-sync (${syncReasonText.join(", ")})` : noAutoTypo ? "skipped (--no-auto-typo)" : "up-to-date"}`
@@ -472,14 +495,14 @@ if (dryRun) {
   process.exit(0);
 }
 
-if (shouldSyncTypo) {
-  const envWithOverrides = {
-    ...process.env,
-    SSR_CARD_CONFIG_OVERRIDES: JSON.stringify(cliVars),
-    SSR_RESOLVED_CONFIG_JSON: JSON.stringify(effectiveCfg),
-  };
+const pythonBin = process.env.SSR_PYTHON || "python";
+const envWithOverrides = {
+  ...process.env,
+  SSR_CARD_CONFIG_OVERRIDES: JSON.stringify(cliVars),
+  SSR_RESOLVED_CONFIG_JSON: JSON.stringify(effectiveCfg),
+};
 
-  const pythonBin = process.env.SSR_PYTHON || "python";
+if (shouldSyncTypo) {
   console.log(`[typo-sync] Regenerating typography (${syncReasonText.join(", ")})...`);
   const pyRes = spawnSync(pythonBin, ["scripts/render_typography.py", "--overrides-stdin"], {
     cwd: PROJECT_ROOT,
@@ -526,6 +549,25 @@ if (shouldSyncTypo) {
   }
 } else {
   console.log(`[typo-sync] up-to-date (${preset})`);
+}
+
+if (emitCardPng) {
+  const cardRes = spawnSync(pythonBin, ["scripts/render_card_png.py", "--overrides-stdin", "-o", finalCardOutput], {
+    cwd: PROJECT_ROOT,
+    input: JSON.stringify(cliVars),
+    env: envWithOverrides,
+    encoding: "utf8",
+    stdio: ["pipe", "inherit", "inherit"],
+    shell: false,
+  });
+  if (cardRes.error) {
+    console.error(`[card-png] Failed to spawn python: ${cardRes.error.message}`);
+    process.exit(1);
+  }
+  if ((cardRes.status ?? 1) !== 0) {
+    console.error(`[card-png] render_card_png.py exited with status ${cardRes.status}`);
+    process.exit(cardRes.status ?? 1);
+  }
 }
 
 console.log(`[render] preset=${preset} -> ${hasExplicitOutput ? "(custom -o)" : autoOutput}`);
